@@ -1,7 +1,7 @@
 \documentclass[graybox, envcountchap]{Template/svmult}
 
 
-
+\usepackage{natbib}
 \usepackage{mathptmx}        % selects Times Roman as basic font
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -273,43 +273,49 @@ When placed at the end of a chapter or contribution (as opposed to at the end of
 \end{enumerate}
 For the reference style, we suggest to use \textit{LaTeX (US)} from INSPIRE.}
 
-\begin{thebibliography}{99}
+\cite{2022MLS&T...3a5023W}
 
-%\cite{LIGOScientific:2016aoc}
-\bibitem{LIGOScientific:2016aoc}
-B.~P.~Abbott \textit{et al.} [LIGO Scientific and Virgo],
-%``Observation of Gravitational Waves from a Binary Black Hole Merger,''
-Phys. Rev. Lett. \textbf{116}, no.6, 061102 (2016)
-doi:10.1103/PhysRevLett.116.061102
-[arXiv:1602.03837 [gr-qc]].
-%7349 citations counted in INSPIRE as of 06 Jan 2022
+% \LaTeX{} \cite{latex2e} is a set of macros built atop \TeX{} \cite{unsrt}.
+\bibliographystyle{unsrt} % We choose the "plain" reference style
+\bibliography{ref} % Entries are in the refs.bib file
 
-%\cite{Einstein:1916vd}
-\bibitem{Einstein:1916vd}
-A.~Einstein,
-%``The Foundation of the General Theory of Relativity,''
-Annalen Phys. \textbf{49}, no.7, 769-822 (1916)
-doi:10.1002/andp.19163540702
-%1236 citations counted in INSPIRE as of 06 Jan 2022
+% \begin{thebibliography}{99}
 
-%\cite{Hawking:1975vcx}
-\bibitem{Hawking:1975vcx}
-S.~W.~Hawking,
-%``Particle Creation by Black Holes,''
-Commun. Math. Phys. \textbf{43}, 199-220 (1975)
-[erratum: Commun. Math. Phys. \textbf{46}, 206 (1976)]
-doi:10.1007/BF02345020
-%9331 citations counted in INSPIRE as of 06 Jan 2022
+% % \cite{LIGOScientific:2016aoc}
+% \bibitem{LIGOScientific:2016aoc}
+% B.~P.~Abbott \textit{et al.} [LIGO Scientific and Virgo],
+% %``Observation of Gravitational Waves from a Binary Black Hole Merger,''
+% Phys. Rev. Lett. \textbf{116}, no.6, 061102 (2016)
+% doi:10.1103/PhysRevLett.116.061102
+% [arXiv:1602.03837 [gr-qc]].
+% %7349 citations counted in INSPIRE as of 06 Jan 2022
 
-%\cite{Penrose:1969pc}
-\bibitem{Penrose:1969pc}
-R.~Penrose,
-%``Gravitational collapse: The role of general relativity,''
-Riv. Nuovo Cim. \textbf{1}, 252-276 (1969)
-doi:10.1023/A:1016578408204
-%1319 citations counted in INSPIRE as of 06 Jan 2022
+% % \cite{Einstein:1916vd}
+% \bibitem{Einstein:1916vd}
+% A.~Einstein,
+% %``The Foundation of the General Theory of Relativity,''
+% Annalen Phys. \textbf{49}, no.7, 769-822 (1916)
+% doi:10.1002/andp.19163540702
+% %1236 citations counted in INSPIRE as of 06 Jan 2022
 
-\end{thebibliography}
+% %\cite{Hawking:1975vcx}
+% \bibitem{Hawking:1975vcx}
+% S.~W.~Hawking,
+% %``Particle Creation by Black Holes,''
+% Commun. Math. Phys. \textbf{43}, 199-220 (1975)
+% [erratum: Commun. Math. Phys. \textbf{46}, 206 (1976)]
+% doi:10.1007/BF02345020
+% %9331 citations counted in INSPIRE as of 06 Jan 2022
+
+% %\cite{Penrose:1969pc}
+% \bibitem{Penrose:1969pc}
+% R.~Penrose,
+% %``Gravitational collapse: The role of general relativity,''
+% Riv. Nuovo Cim. \textbf{1}, 252-276 (1969)
+% doi:10.1023/A:1016578408204
+% %1319 citations counted in INSPIRE as of 06 Jan 2022
+
+% \end{thebibliography}
 
 
 
