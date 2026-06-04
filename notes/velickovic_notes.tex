@@ -1,1 +1,118 @@
 Things I want to highlight/especially like from the Velickovic Review.
+
+% =====================================================================
+% PASS 1 -- YELLOW highlights + comments (synthesised 2026-05-30)
+% Source: annotated_former_reviews/Velickovic Review.pdf, pp. 2-3
+% (Highlights were flattened pen-strokes; text recovered + comments read
+%  from the rendered pages.)
+% =====================================================================
+
+\subsection*{Yellow highlights}
+
+% --- Motivation: the world is already a graph (p.2) ---
+The opening salvo is a string of "everything is secretly a graph" examples --
+worth mining for our own astro-flavoured version of the same move.
+
+\begin{itemize}
+    \item Graphs are ``\emph{(interconnected structures of nodes connected by
+        edges)}'' -- the one-line definition we can borrow verbatim before
+        swapping in astrophysical nodes and edges.
+    \item The ``\emph{connectomic structure of the brain (a graph of neurons
+        connected by synapses)}'' -- a vivid, non-astro exemplar of a system
+        that ``\emph{[is] best reasoned about in terms of graphs}.'' Good
+        template sentence; we replace the brain with merger trees / LSS.
+    \item Deployment-at-scale proof point: GNNs ``\emph{serve estimated travel
+        times in Google Maps}.'' Useful to pre-empt the ``is this just a toy?''
+        reaction -- graphs already run in production at planetary scale.
+\end{itemize}
+
+% --- The thesis hook: Transformers are a special case of GNNs (p.2) ---
+The passage I most want to keep, near-verbatim, as a framing device:
+\begin{quote}
+``\emph{Note that this finding does not clash with the fact that many recent
+skillful ML systems are based on the Transformer architecture (Vaswani et al.,
+2017) -- as we will uncover in this review, Transformers are themselves a
+special case of GNNs}.''
+\end{quote}
+This is the rhetorical pivot that lets us claim breadth without dismissing
+Transformers: not a rival regime, but a fully-connected special case. Ties
+directly to our ``N regimes'' point in notes\_to\_self.
+
+% --- Technical caveat worth flagging (p.3) ---
+\begin{itemize}
+    \item ``\emph{Here we assumed for simplicity that the functions f, F do not
+        change the adjacency matrix, so we assume they only return graph or
+        node-level outputs}.'' Marks the scope boundary of the standard
+        formalism (fixed connectivity, node-/graph-level readout). A natural
+        place for us to gesture at the harder, less-covered case: \emph{learned
+        or evolving} graph structure.
+\end{itemize}
+
+\subsection*{Comments (handwritten margin notes)}
+
+\begin{itemize}
+    \item \textbf{Intro structure plan (p.2, bottom).} A scaffold for how to
+        open the review: \emph{start with why graphs are interesting in
+        astro}; lead from \emph{physics} (Miles' tutorial, for the general
+        intuition of interaction) into \emph{astro} exemplars -- planets,
+        merger trees + IceCube, large-scale structure (LSS, the ``machinery''
+        case). Details deferred to later sections. Reference pointers jotted
+        alongside: Pablo Dom\'inguez + Paco; ``Peter + Miles' paper''; ``Peter
+        fiber paper.''
+    \item \textbf{Directed vs.\ undirected (p.3, beside the adjacency-matrix
+        definition, eq.~2).} Note to distinguish the directed and undirected
+        cases explicitly, and a source pointer: \emph{Wolfram Alpha /
+        Demonstrations} -- candidate for an interactive or figure illustrating
+        directed vs.\ undirected adjacency.
+\end{itemize}
+
+\subsection*{Architectures + framing to feature in our review}
+
+\begin{itemize}
+    \item \textbf{Geometric GNNs in the wild -- the hall of fame.} Lead with the
+        headline successes so the reader sees graphs have already reshaped a
+        science. Flagship: \textbf{AlphaFold~2} (Jumper et al., 2021) -- protein
+        folding as message passing over a graph of residues, the canonical
+        ``a GNN changed a field'' story. (Room to add other marquee cases as we
+        gather them.)
+    \item \textbf{``Transformers are the GNNs that won the hardware lottery.''}
+        A powerful one-liner (nodding to Hooker's \emph{hardware lottery}): the
+        Transformer is the fully-connected special case of message passing that
+        happened to map perfectly onto GPU/TPU matmuls -- so it scaled, and the
+        rest is history. Pairs directly with the p.2 highlight that
+        \emph{Transformers are themselves a special case of GNNs}: not a rival,
+        just the sibling that drew the lucky silicon.
+    \item \textbf{The joke: ``GNNs Are All You Need.''} A deliberately
+        ML-coded gag riffing on \emph{Attention Is All You Need} (Vaswani et
+        al., 2017) -- to land somewhere with a wink (box title, section header,
+        or aside). It is more than a pun: Veli\v{c}kovi\'c's own verdict below
+        ("likely all we need") gives it a real technical anchor.
+\end{itemize}
+
+\subsection*{Passage to adapt -- expressivity / Turing-universality}
+
+I want something very similar to this in our review (the through-line that
+the simple message-passing formalism is, in a strong sense, enough):
+\begin{quote}
+``\emph{Do GNNs, as given by Equation~10, represent all of the valid
+permutation-equivariant functions over graphs? Opinions are divided. Key
+results in previous years seem to indicate that such models are fundamentally
+limited in terms of problems they can solve (Xu et al., 2019; Morris et al.,
+2019). However, most, if not all, of the proposals for addressing those
+limitations are still expressible using the pairwise message passing formalism
+of Equation~10; the main requirement is to carefully modify the graph over
+which the equation is applied (Veli\v{c}kovi\'c, 2022). To supplement this
+further, Loukas (2020) showed that, under proper initial features, sufficient
+depth--width product (\#layers $\times$ dim $h_u$), and correct choices of
+$\phi$ and $\psi$, GNNs in Equation~10 are Turing universal -- likely to be
+able to simulate any computation which any computer can perform over such
+inputs. All points considered, it is the author's opinion that the formalism
+in this section is likely all we need to build powerful GNNs -- although, of
+course, different perspectives may benefit different problems, and existence of
+a powerful GNN does not mean it is easy to find using stochastic gradient
+descent}.''
+\end{quote}
+% NB: original symbols garbled in copy -- $\phi,\psi$ are the message/update
+% functions; check exact notation against the source before reusing.
+This is also the natural home for the ``GNNs Are All You Need'' joke: pun on
+top, Turing-universality + the author's ``likely all we need'' underneath.

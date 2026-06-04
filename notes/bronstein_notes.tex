@@ -1,1 +1,448 @@
 Things I want to highlight/especially like from the Bronstein+ Geometric Deep Learning Bible.
+
+% =====================================================================
+% Notes from the annotated Bronstein "Geometric Deep Learning" proto-book
+% (Bronstein, Bruna, Cohen & Velickovic 2021, arXiv:2104.13478),
+% \citep{Bronstein2021_geometricDL_book}. Going through CKJ's margin comments
+% one by one. For kept material: [QUOTE] marks verbatim text (anchor only),
+% [REWRITE] marks our lighter, analogy-driven version. House style: lighter on
+% abstract math, heavier on writing + analogies (physical-system analogies
+% especially). LICENSE: arXiv non-exclusive distribution license -- cite and
+% paraphrase freely, but do NOT reproduce figures/large text verbatim without
+% the authors' permission.
+% =====================================================================
+
+% --- Comment 1 (p.16): plan for a SYMMETRY-FOUNDATIONS APPENDIX -----------
+% CKJ note (verbatim): "I want an Appendix Section like this here, but rewrite
+% it so it is not directly lifted. Keep the formal definition block for the
+% group; be EXPANSIVE on 3.1, SHORT on 3.2 and 3.3, MEDIUM on 3.4. 3.5 will be
+% covered in the main text. Keep all citations here and add 'Group Theory in a
+% Nutshell for Physicists' by Anthony Zee."
+% Highlight: section heading "3.1 Symmetries, Representations, and Invariance".
+% PLAN: build an Appendix on symmetry foundations, rewritten in our own words
+% (lighter math, more analogy), based on GDL section 3:
+%   - keep a formal DEFINITION BLOCK for a group;
+%   - 3.1 Symmetries, Representations, and Invariance -- EXPANSIVE;
+%   - 3.2, 3.3 -- SHORT;
+%   - 3.4 -- MEDIUM;
+%   - 3.5 -- defer to main text (CKJ to confirm).
+% Keep all of GDL's citations from this section; ADD Zee 2016
+% \citep{Zee2016_grouptheory_nutshell}. Pairs with the convolution<=>translation-
+% equivariance appendix idea and the formal-definitions material from the
+% summer-school notes (slides 5-7, 87).
+% [STATUS: plan recorded; draft the appendix text after reading GDL 3.1-3.5.]
+% [DONE: drafted as notes/appendix_symmetries.tex.]
+
+% --- Comment 2 (p.31): equivariance is rich + compositional; non-linearities
+% CKJ notes: (a) the non-linearity is not GNN-specific, but worth a brief
+% mention that -- as in any NN -- non-linearities matter; (b) explicitly state
+% that COMPOSITIONS of equivariant maps stay equivariant (even through
+% non-linearities), and that equivariances are VERY RICH.
+% [QUOTE] (anchor, trimmed; Bronstein et al. sec 3.5): "the family of linear
+%   invariants is not a very rich object, [whereas] the family of linear
+%   equivariants provides a much more powerful tool, since it enables the
+%   construction of rich and stable features by composition with appropriate
+%   non-linear maps ... if B is G-equivariant ... and sigma is an arbitrary
+%   (non-linear) map then ... U := (sigma o B) ... is also G-equivariant".
+% [REWRITE]: Linear invariants are a thin toolbox -- there simply are not many
+%   of them. Linear equivariants are far richer, and (crucially) COMPOSITIONAL:
+%   stack equivariant maps and interleave them with pointwise non-linearities,
+%   and the result is still equivariant. For a GNN this is the permutation
+%   case -- apply a non-linearity to each node's features and THEN relabel the
+%   nodes, or relabel and then apply: the two agree, so equivariance survives
+%   every layer. This is exactly why deep equivariant networks are easy to
+%   assemble by stacking. The non-linearity itself is nothing GNN-specific:
+%   as in any neural network it is what keeps a deep stack from collapsing into
+%   a single linear map -- worth one sentence, no more.
+% [CAVEAT to keep in mind, not from the comment]: pointwise non-linearities
+%   preserve equivariance when the group acts on the DOMAIN (permutations,
+%   shifts). When the group acts on feature CHANNELS (e.g. SO(3) on vector/
+%   tensor features), naive element-wise non-linearities BREAK equivariance --
+%   which is why steerable nets (TFN/e3nn) act non-linearly only on invariant
+%   norms. Pairs with the appendix and the "implementing other symmetries" note.
+
+% --- Comment 3 (p.32): RECREATE Figure 8 (GDL blueprint on a graph) -------
+% CKJ note: "I love Figure 8. Make a note that I should recreate it."
+% What it shows (caption, Bronstein et al.): the GDL blueprint exemplified on a
+% GRAPH -- a graph flowing left-to-right through a PIPELINE of coloured slabs:
+%   permutation-EQUIVARIANT layer (node-wise features)
+%     -> LOCAL POOLING layer (graph COARSENING: the graph gets smaller)
+%       -> permutation-EQUIVARIANT layer
+%         -> permutation-INVARIANT GLOBAL POOLING (readout)  -> scalar output.
+% *** TODO FIGURE (emphasize): make OUR OWN version of this blueprint-pipeline
+% figure (do NOT lift it -- arXiv non-exclusive license). *** Distinct from
+% figures/computational_modules.py (which is a TAXONOMY of layers): this one is
+% the PROCESS/pipeline -- a single graph being transformed and progressively
+% coarsened through the blueprint h = f(P_global({P_local(sigma(F))})). Natural
+% as a Python (networkx + matplotlib) script showing the graph coarsening stage
+% by stage. This is the same blueprint the summer-school deck used (slides
+% 21/63), so it ties the whole "blueprint" thread together.
+
+% --- Comment 4 (p.33): the GDL BLUEPRINT (sec 3.5), rewritten lighter -----
+% CKJ note: "Something I really like. Get it into our notes and rewrite it less
+% math-heavy. Could be nice to have a section AFTER THE INTRODUCTION on
+% 'Geometry, Graphs, and Graph Neural Networks', with each being a subsection."
+% Highlight: heading "Geometric Deep Learning Blueprint".
+%
+% [QUOTE] (anchor, Bronstein et al. sec 3.5): building blocks = "Linear
+%   G-equivariant layer B ... Nonlinearity sigma ... Local pooling (coarsening)
+%   P ... G-invariant layer (global pooling) A", composed as
+%   f = A o sigma_J o B_J o P_{J-1} o ... o P_1 o sigma_1 o B_1.
+% [REWRITE]: Almost every successful deep architecture is the same recipe -- the
+%   Geometric Deep Learning blueprint -- built from four kinds of block:
+%     (1) an EQUIVARIANT layer that mixes features in step with the symmetry
+%         (message passing on a graph, convolution on a grid);
+%     (2) a pointwise NON-LINEARITY (ordinary NN machinery);
+%     (3) optional LOCAL POOLING / COARSENING that shrinks the domain while
+%         keeping the symmetry (coarsen the graph, downsample the grid);
+%     (4) a final GLOBAL POOLING that reads out a symmetry-INVARIANT answer.
+%   Stack equivariant+nonlinearity (+coarsening) blocks and finish with the
+%   global readout. What distinguishes CNNs, GNNs, Transformers, DeepSets is
+%   only the CHOICE of domain, symmetry group, and how each block is realized --
+%   one template, many architectures. PHYSICS ANALOGY (use it): this is a
+%   renormalization-group flow -- repeated local, symmetry-respecting operations
+%   interleaved with coarse-graining across scales, ending in a single global
+%   invariant summary.
+%   Two settings worth flagging: FIXED domain (images on a grid -- only the
+%   signal varies) vs VARYING domain (graphs -- both the structure AND the
+%   signal vary, so deformation/geometric stability matters; ties to Comment 2
+%   caveat and appendix A.3).
+%
+% STRUCTURAL SUGGESTION (CKJ): right after the Introduction, a section
+%   "Geometry, Graphs, and Graph Neural Networks" with three subsections --
+%   {Geometry, Graphs, Graph Neural Networks}. The blueprint lives in the
+%   Geometry (or GNN) subsection. Refines the earlier intro -> graphs -> GNNs
+%   plan into a single titled section with those three subsections.
+%
+% DRAFT HIGHLIGHTED BLOCK (overview, styled like the GDL "Blueprint" box).
+% Uses the Springer svgraybox env from the root main.tex; swap for a titled
+% tcolorbox if a bordered/captioned box is preferred.
+\begin{svgraybox}
+\textbf{The Geometric Deep Learning blueprint.}
+Almost every successful deep architecture is one recipe applied to a different
+domain and symmetry. Fix a domain $\Omega$ with symmetry group $G$ and assemble
+four kinds of block:
+\begin{itemize}
+  \item \textbf{Equivariant layer} $B$ -- mixes features in step with $G$
+        (message passing on a graph, convolution on a grid):
+        $B(g.x)=g.B(x)$.
+  \item \textbf{Non-linearity} $\sigma$ -- applied pointwise, as in any network.
+  \item \textbf{Local pooling (coarsening)} $P$ -- optionally shrinks the domain
+        ($\Omega'\subseteq\Omega$) while preserving the symmetry.
+  \item \textbf{Global pooling} $A$ -- reads out a $G$-\emph{invariant} answer:
+        $A(g.x)=A(x)$.
+\end{itemize}
+Stacking equivariant blocks (with non-linearities and optional coarsening) and
+finishing with a global invariant readout gives
+\[
+  f \;=\; A \circ \sigma_J \circ B_J \circ P_{J-1}\circ\cdots\circ
+          P_1 \circ \sigma_1 \circ B_1 .
+\]
+CNNs, GNNs, Transformers, and Deep Sets are all this blueprint -- they differ
+only in the choice of domain $\Omega$, symmetry group $G$, and how each block is
+realized. (After \citealp{Bronstein2021_geometricDL_book}.)
+\end{svgraybox}
+
+% --- Comment 6 (p.34): the "5 Gs" geometric domains -> Geometry section ---
+% CKJ note: "This section is amazing but should only be mentioned in
+% PERSPECTIVIZING GNNs in my paper. Section 4.1 should be relied on heavily."
+% Highlight: "Geometric Domains: the 5 Gs".
+% ACTION: in the GEOMETRY section/subsection, briefly CONTEXTUALIZE the five
+% GDL domains -- the "5 Gs": Grids, Groups, Graphs, Geodesics & Gauges
+% (Fig. 9) -- only to situate where GNNs sit within the larger geometric-deep-
+% learning family (graphs = one of the five). Do NOT develop grids/groups/
+% geodesics/gauges in depth; they are scene-setting. The GRAPHS material
+% (GDL sec 4.1) is the part to lean on heavily -- see the p.39 comment.
+
+% --- Comment 5 (p.34): trimmed architecture table [PENDING design Qs] -----
+% CKJ note: keep the GDL architecture table, TRIM (drop Mesh CNN + Transformer),
+% ADD a column "additional constraints", and highlight some rows.
+% Source table (Architecture | Domain Omega | Symmetry group G):
+%   CNN | Grid | Translation;  Spherical CNN | Sphere | SO(3);
+%   [drop] Intrinsic/Mesh CNN | Manifold | Isometry + Gauge;
+%   GNN | Graph | Permutation Sigma_n;  Deep Sets | Set | Permutation Sigma_n;
+%   [drop] Transformer | Complete graph | Permutation Sigma_n;
+%   LSTM | 1D Grid | Time warping.
+% Trimmed rows to keep: CNN, Spherical CNN, GNN, Deep Sets, LSTM.
+% DECIDED: columns = Architecture, Domain, Symmetry, Locality/receptive field,
+% Example use (non-astro), Example use (astro, ALWAYS with a citation).
+% Rows = CNN, Spherical CNN, GNN (HIGHLIGHTED), Deep Sets, Transformer
+% (LSTM swapped out for Transformer). 6 columns => wide; wrap in a
+% sidewaystable (\usepackage{rotating}) if it overflows the text width.
+% Needs \usepackage{colortbl} (or xcolor[table]) for \rowcolor.
+\begin{table}
+\caption{Common geometric architectures as instances of the Geometric Deep
+Learning blueprint, after \citet{Bronstein2021_geometricDL_book} (trimmed). The
+GNN row -- the focus of this review -- is highlighted.}
+\label{tab:gdl_architectures}
+\centering\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lll>{\raggedright\arraybackslash}p{2.4cm}>{\raggedright\arraybackslash}p{2.9cm}>{\raggedright\arraybackslash}p{3.1cm}}
+\hline\noalign{\smallskip}
+Architecture & Domain $\Omega$ & Symmetry $G$ & Locality / receptive field & Example use (non-astro) & Example use (astronomy) \\
+\noalign{\smallskip}\svhline\noalign{\smallskip}
+CNN           & Grid           & Translation            & local patch (shared kernel) & image classification \citep{Krizhevsky2012_alexnet_imagenet}        & galaxy morphology \citep{Dieleman2015_galaxymorphology_CNN} \\
+Spherical CNN & Sphere         & Rotation $SO(3)$       & local spherical cap         & omnidirectional/3D vision \citep{Cohen2018_spherical_CNN}   & weak-lensing maps on the sphere \citep{Perraudin2019_deepsphere_spherical} \\
+\rowcolor[HTML]{F3E9D6}
+GNN           & Graph          & Permutation $\Sigma_n$ & 1-hop neighbours (edges)    & molecular property pred.\ \citep{Gilmer2017_MPNN_quantumchemistry}   & merger trees \citep{Jespersen2022_mangrove} \\
+Deep Sets     & Set            & Permutation $\Sigma_n$ & none (no edges)             & point-cloud classification \citep{Zaheer2017_deepsets}  & cosmology from cosmic voids \citep{Cranmer2021_histpool_deepsets} \\
+Transformer   & Complete graph & Permutation $\Sigma_n$ & all-to-all (global attention) & language modelling \citep{Vaswani2017_transformer_attention}        & light-curve embeddings \citep{DonosoOliva2023_astromer_transformer} \\
+\noalign{\smallskip}\hline
+\end{tabular}
+\end{table}
+% Astro citations: CNN -> Dieleman+ 2015; Spherical CNN -> DeepSphere
+% (Perraudin+ 2019; note it is itself a special-case graph CNN on HEALPix);
+% GNN -> Mangrove (Jespersen+ 2022); Deep Sets -> HistPool (Cranmer+ 2021);
+% Transformer -> ASTROMER (Donoso-Oliva+ 2023). Swap GNN/Deep Sets astro
+% examples for others in the bib if preferred (e.g. Makinen+ 2022, Chatterjee+
+% 2025).
+
+% --- Comment (p.36) + "all of 4.1 is great": GRAPHS AND SETS (GDL sec 4.1) -
+% CKJ notes: (p.36) "This section can be lifted almost directly (rewrite for
+% properness, ASTROPHYSICS focus, and a little less abstract math)"; and the
+% entirety of section 4.1 is great and should be relied on heavily (see also
+% p.39 comment). [Paraphrase, don't literally copy -- arXiv license.]
+% WHAT 4.1 DEVELOPS (the backbone of our Graphs/GNN section):
+%   - graphs have NO canonical node ordering, so functions on them must be
+%     permutation INVARIANT (graph-level) or permutation EQUIVARIANT (node-level);
+%   - sets are graphs with no edges (E = {}); permutation matrices P act by
+%     reordering the rows of the node-feature matrix X;
+%   - the canonical permutation-invariant form is Deep Sets,
+%       [QUOTE eq.6]  f(X) = phi( SUM_{u in V} psi(x_u) ),
+%     i.e. apply psi per node, sum (order-independent), then phi;
+%   - node-wise functions F(X) must instead be equivariant: F(PX) = P F(X);
+%   - this then generalizes to message passing over edges (the three flavours).
+% PLAN: this is the PRIMARY source to lift-and-rewrite for the "Graphs" /
+% "Graph Neural Networks" subsections -- but we have ALREADY drafted almost all
+% of it from the summer-school deck, so MERGE rather than duplicate:
+%   * permutation invariance/equivariance equations + molecule examples
+%     (summer_school: slides 60-62, 92);
+%   * Deep Sets / the rho(SUM phi) form (summer_school Deep Sets notes;
+%     \citep{Zaheer2017_deepsets, Hainje2025_triangle_deepsets});
+%   * the anatomy of a message-passing step + the three propagation flavours
+%     (summer_school: slide 53 and the "Common GNN propagation layers"
+%     subsection).
+% So: write ONE coherent Graphs/GNN treatment, astro-focused and light on
+% abstract math, using GDL 4.1 for structure/rigour and the summer-school
+% material for the analogies and astro framing. Cite
+% \citep{Bronstein2021_geometricDL_book} throughout.
+% MERGE RULE (CKJ): if GDL 4.1 and our existing summer-school text conflict,
+% defer to the summer-school (presentation) text.
+
+% --- Comment 1 (p.39): rely on 4.1 for the definitional section; figures ---
+% CKJ note: "All of 4.1 is amazing -- rely on it heavily for the notes and the
+% DEFINITIONAL section. I'll recreate several figures; refer to the overview
+% figure we made a bit earlier. I'll make a figure like Figure 10, so refer to
+% it in the notes/text. Go easy on isomorphism (less relevant for astronomy)
+% but still talk about it." Highlight: "Figure 10:".
+% ACTIONS:
+%   - 4.1 is the backbone of the Graphs/GNN DEFINITIONAL section (see p.36 note).
+%   - FIGURES: CKJ will recreate several. (a) "the overview figure we made a bit
+%     earlier" = our GDL-blueprint pipeline recreation (Comment 3 / Fig. 8) and/
+%     or figures/computational_modules.py -- refer back to it. (b) A figure like
+%     GDL Figure 10: building permutation-EQUIVARIANT functions by applying a
+%     permutation-INVARIANT phi to every NEIGHBOURHOOD (phi on x_b together with
+%     the multiset of neighbour features X_{N_b}) -- i.e. the local-aggregation/
+%     message-passing picture. This is the same content as our slide-53 "anatomy
+%     of a message-passing step"; cross-refer (we can extend
+%     figures/computational_modules.py companion scripts to produce it).
+%   - ISOMORPHISM: keep it LIGHT (less relevant for astronomy) but still mention
+%     it -- trim the appendix A.2 iso-vs-automorphism discussion accordingly.
+
+% --- Comment 2 (p.39): FOOTNOTE for the Deep Sets discussion --------------
+% CKJ note: "This should be in a footnote when we talk about Deep Sets" -- a fun
+% aside that you cannot define a coarsening without a sense of LOCALITY, which
+% does not natively exist in a set.
+% [QUOTE] (anchor): "we cannot define a non-trivial coarsening assuming set
+%   structure alone. There exist established approaches that infer topological
+%   structure from unordered sets, and those can admit non-trivial coarsening".
+% [REWRITE -> FOOTNOTE]: "A set has no native notion of locality -- with no
+%   edges, no node is 'near' any other -- so there is nothing to coarsen
+%   towards: a non-trivial pooling/coarsening operator cannot be defined on set
+%   structure alone. (One can of course first INFER a topology over the points
+%   -- e.g. a proximity graph -- at which point coarsening becomes meaningful;
+%   but that is precisely the step of turning the set back into a graph.)"
+% Ties to: the GDL blueprint's local-pooling block (needs locality), Deep Sets
+% as the edge-less limit, and the "what if I don't have an adjacency matrix"
+% material. Cite \citep{Bronstein2021_geometricDL_book}.
+
+% --- Comment 3 (p.39): GDL sections 4.2-4.5 -> perspectivize only ----------
+% CKJ note: "Sections 4.2-4.5 are less relevant, but note that we should
+% PERSPECTIVIZE to these in our paper." (GDL 4.2-4.5 = grids/CNNs, groups &
+% homogeneous spaces, geodesics & manifolds, gauges -- the non-graph "Gs".)
+% ACTION: do NOT develop them; mention them briefly to situate GNNs within the
+% wider geometric-deep-learning family (pairs with the "5 Gs" contextualization
+% from the p.34 comment). \citep{Bronstein2021_geometricDL_book}.
+
+% --- Comment (p.65): GEOMETRIC GRAPHS as a FRONTIER (outlook, ~1 paragraph) -
+% CKJ note: geometric graphs (GDL sec 4.6 "Geometric graphs and Meshes") are
+% barely explored in astronomy (Lee & Villaescusa-Navarro a bit). Mention in the
+% OUTLOOK/future-directions as ~1 PARAGRAPH (no more): appealing for large-scale
+% structure of the Universe, potentially in a MORE INTERPRETABLE way; and be
+% explicit about the EXTRA inductive biases / geometric priors one enforces or
+% can leverage in such a framework.
+% CONTENT for the paragraph: a "geometric graph" is a graph whose nodes carry
+% spatial coordinates, so the relevant symmetry is no longer just permutation
+% but ALSO the spatial group (E(n)/SO(3)); processing it means building in
+% rotation/translation equivariance, distances/relative positions, and
+% geometry-induced locality (cf. the E(n)-equivariant / steerable machinery,
+% EGNN \citep{GarciaSatorras2021_EGNN_equivariant}, and our "implementing other
+% symmetries" note). The payoff for LSS: respecting the cosmic web's geometry
+% directly, with more physically interpretable, symmetry-grounded features.
+% CITE \citep{Lee2025_topological_cosmology} (Lee & Villaescusa-Navarro,
+% topological deep learning) as work that can be read as pushing on this
+% frontier; \citep{Bronstein2021_geometricDL_book} for the geometric-graph
+% framework itself. Keep to one paragraph.
+
+% --- Comment (p.81): GDL sec 5.3 (Graph Neural Networks) -> lean heavily ---
+% CKJ note: "The entirety of section 5.3 should be leaned heavily on for
+% inspiration. I love it." Highlight: heading "5.3 Graph Neural Networks".
+% WHAT 5.3 IS: GDL's core GNN treatment -- the three propagation "flavours"
+% (convolutional, attentional, message-passing) and how they specialize the
+% blueprint to graphs. This is the SOURCE of the three flavour equations we
+% already transcribed (summer-school slide 64) and of the "Conventional"
+% continuum in figures/computational_modules.py.
+% ACTION: lean on 5.3 for the GNN-architectures / propagation-layers section,
+% MERGING with what we already have (the "Common GNN propagation layers"
+% subsection + the three equations + the computational_modules figure). Per the
+% merge rule, defer to the summer-school text on any conflict; use 5.3 for extra
+% rigour/structure. \citep{Bronstein2021_geometricDL_book}.
+
+% --- Comment (p.82): three-flavours dataflow figure -> MUST ADD to main ----
+% CKJ note: "I must ABSOLUTELY make my own version of this figure. It will be
+% included. This is very important." Highlight: "Figure 17:" (GDL).
+% Placeholder already saved at GNN_Astrophysics_Review_old/figs/
+% bronstein_layer_overview.png. This figure is SEPARATE FROM and COMPLEMENTARY
+% TO figures/computational_modules.py: that one is the TAXONOMY of layers; THIS
+% one is the DATAFLOW of the three flavours (how a message is formed in each).
+% MUST-ADD to main (drop-in below; caption lifted from GDL Fig. 17 with a caps
+% TODO to replace with our own rendering -- do NOT ship the lifted version):
+\begin{figure}
+  \includegraphics[width=\textwidth]{figs/bronstein_layer_overview}
+  \caption{\textbf{TODO: MAKE OWN VERSION (placeholder lifted from
+  \citealp{Bronstein2021_geometricDL_book}, Fig.~17 -- replace before
+  publication).} Dataflow for the three flavours of GNN layer, shown on the
+  neighbourhood of node $b$. Left to right: \emph{convolutional}, where each
+  sender's features are scaled by a fixed coefficient $c_{uv}$;
+  \emph{attentional}, where that scalar is computed by an attention mechanism
+  of the receiver over the sender, $\alpha_{uv}=a(x_u,x_v)$; and
+  \emph{message passing}, where a full vector message is built from both sender
+  and receiver, $m_{uv}=\psi(x_u,x_v)$.}
+  \label{fig:gnn_flavours}
+\end{figure}
+% Pairs with the three flavour equations (summer-school "Common GNN propagation
+% layers" subsection) and Fig. 10 (neighbourhood aggregation).
+
+% --- Comment (p.84): "no adjacency matrix" / empty edge set ---------------
+% CKJ note: this goes in the "What if I don't have an adjacency matrix?"
+% section. GDL's version is similar and well-written but more FORMAL; ours
+% should lean more on PHYSICAL INTUITION, and hammer (again and again) that as
+% physicists we can often IMPOSE the adjacency from physical knowledge, or LEARN
+% it heuristically.
+% [QUOTE] (anchor): "Unordered sets are provided without any additional
+%   structure or geometry whatsoever -- hence ... the most natural way to
+%   process them is to treat each set element entirely independently. This
+%   translates to a permutation equivariant function over such inputs."
+% ACTION: MERGE into the existing "What if I don't have an adjacency matrix?"
+% subsection (already drafted from summer-school slides 71-72: make it up /
+% Deep Sets / fully connected / learn it). Use GDL's empty-edge-set framing for
+% rigour, but per the merge rule keep OUR text and physical framing; reinforce
+% the recurring thesis that the adjacency is a DESIGN CHOICE we can set from
+% physics (e.g. light-cone causality at IceCube, proximity/gravity for cosmic
+% graphs) or learn. \citep{Bronstein2021_geometricDL_book}.
+
+% --- Comment (p.86, #1): Transformers vs GATs -- DON'T over-claim ---------
+% Source: GDL sec 5.3 (Transformers as attentional GNNs), p.86.
+% CKJ note: "We do not want to claim that Transformers ARE just GNNs, only that
+% they can be DERIVED as GATs; the positional encodings are very different, and
+% it is important to distinguish them."
+% [QUOTE] (anchors): "we can think of self-attention as inferring a soft
+%   adjacency matrix, a_uv = a(x_u, x_v)"; and "Transformers address this issue
+%   by introducing positional encodings: the node features x_u are augmented to
+%   encode node u's position in the sequence, typically as samples from a sine
+%   wave...".
+% [REWRITE / FRAMING]: A Transformer can be DERIVED as a graph attention network
+%   on a fully-connected graph -- self-attention is exactly a learned, soft
+%   adjacency a_{uv} = a(x_u, x_v). But a Transformer is NOT "just a GNN": its
+%   positional encodings re-inject the order/position that a permutation-
+%   equivariant GAT deliberately discards, and they are conceptually distinct.
+%   State the derivation, but carefully distinguish -- avoid the over-claim that
+%   "Transformers are just GNNs". Refines the slide-22 special-case point and
+%   the computational_modules Transformer row (complete graph + attention).
+
+% --- Comment (p.86, #2): "Inferred edge set" -> the LEARN-IT option -------
+% Source: GDL sec 5.3, "Inferred edge set" (learning latent relational
+% structure / a latent adjacency matrix A), p.86.
+% CKJ note: this follows the "learn the adjacency" idea we already have, but
+% note that inferring the latent structure is often STEERABLE WITH PHYSICAL
+% INTUITION and INTRACTABLE OTHERWISE; cite the IceCube Orsoe papers.
+% [QUOTE] (anchor): "Finally, one can try to learn the latent relational
+%   structure, leading to some general A that is neither I nor 11^T. The problem
+%   of inferring a latent adjacency matrix A for a GNN to use...".
+% [FRAMING]: learning the adjacency jointly with the task is powerful but the
+%   space of possible A is enormous, so it is tractable mainly when STEERED by
+%   physical priors (causality, locality) and effectively intractable without
+%   them. ICECUBE is the ideal worked example: a single setting that can be
+%   handled by ALL FOUR options from "What if I don't have an adjacency matrix?"
+%     - ASSUME/impose it from physics (light-cone causality: connect hits whose
+%       separation is consistent with sub-light-speed signal propagation);
+%     - LEARN it (GraphNeT et al.);
+%     - DEEP SETS (treat the hits as an unordered set);
+%     - FULLY CONNECTED (all hits attend to all hits).
+%   MERGE into the "no adjacency matrix" subsection as the running IceCube
+%   example. Cite \citep{Sogaard2023_graphnet_neutrino,
+%   Orsoe2025_graphnet2_library, Orsoe2026_nubench_benchmark,
+%   Bukhari2023_icecube_kaggle} and \citep{Bronstein2021_geometricDL_book}.
+%   Also cite CKJ's own IceCube bachelor's thesis (the GraphNeT precursor: GNNs
+%   for low-energy neutrino event reconstruction, ~10^6x faster than the
+%   classical algorithm): \citep{Jespersen2022_icecube_bachelor}.
+% (The p.87 highlight that latent graph inference is "highly challenging" --
+%  a discrete objective coupled to the downstream task -- reinforces the
+%  "intractable without physical priors" point above.)
+
+% --- Comment (p.87): geometric node features -> equivariance, astro-flavour
+% Source: GDL sec 5.3 (geometric graphs / coordinates as node features), p.87.
+% CKJ note: "This should also be included, but with an ASTRO-flavour! And
+% appropriate citations to equivariant GNN usage."
+% [QUOTE] (anchor): "node features (or parts thereof) are not just arbitrary
+%   vectors but coordinates of geometric entities ... atoms ... 3D spatial
+%   coordinates ... it is desirable to process [them equivariantly]".
+% [REWRITE / ASTRO FLAVOUR]: very often a node's features are not abstract
+%   attributes but physical COORDINATES -- positions, velocities, separations of
+%   halos, galaxies, or particles. Then we do not want a model that treats them
+%   as arbitrary numbers; we want one that is EQUIVARIANT to rotations and
+%   translations of the system, so that rotating the input rotates the predicted
+%   vectors and leaves predicted scalars unchanged (cf. the appendix and the
+%   "implementing other symmetries" note: build messages from distances /
+%   relative positions, EGNN-style). Connects to the geometric-graphs frontier
+%   (p.65 comment).
+% ASTRO equivariant-GNN citations: \citep{Tang2022_merger_normalizingflow}
+%   (equivariant graph normalizing flows for galaxy-merger reconstruction),
+%   \citep{Jagvaral2022_intrinsicalignment_GNN} (generative modelling of scalar
+%   AND vector quantities for intrinsic alignment),
+%   \citep{Wu2024_galaxyhalo_environment} (E(3)-invariant GNN); method origin
+%   \citep{GarciaSatorras2021_EGNN_equivariant} (EGNN).
+%   \citep{Bronstein2021_geometricDL_book}.
+
+% --- Comment (p.106): extra GNN-APPLICATION references (astronomer-friendly)
+% Source: GDL ch. 6 "Problems and Applications", p.106+.
+% CKJ note: "Go through here and find a few references on GNN applications
+% extra. Take the ones comprehensible to an astronomer first."
+% GDL ch.6 surveys: computational chemistry / drug discovery (Stokes+ 2020
+% antibiotic Halicin), protein biology (AlphaFold), recommender systems, social
+% networks, particle physics, physical simulation, combinatorial optimization,
+% traffic/ETA. Astronomer-comprehensible LANDMARKS to cite as "GNNs across the
+% sciences" (for the intro motivation / a 'beyond astronomy' aside):
+%   * AlphaFold -- protein structure prediction, the flagship "a GNN reshaped a
+%     science" story: \citep{Jumper2021_alphafold_protein}.
+%   * GraphCast -- skillful global WEATHER forecasting, a learned model of a
+%     complex DYNAMICAL SYSTEM (very astro-adjacent): \citep{Lam2023_graphcast_weather}.
+%   * Google Maps ETA -- GNNs in PRODUCTION at planetary scale (grounds the
+%     slide-2/Velickovic "served travel times in Google Maps" point):
+%     \citep{DerrowPinion2021_eta_googlemaps}.
+% Already in our bib and equally astronomer-friendly (reuse): particle physics
+%   \citep{Shlomi2020_particlephysics_review}; physical simulation
+%   \citep{SanchezGonzalez2020_GNS_physics, Pfaff2020_meshsim_GNN}; orbital
+%   mechanics / symbolic dynamics \citep{Lemos2023_orbitalmechanics_symbolic,
+%   Cranmer2019_symbolicphysics_GNN}.
+% (Optional, less astro: Stokes+ 2020 antibiotic discovery -- add if we want a
+%  drug-discovery example.)

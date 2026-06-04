@@ -1,0 +1,74 @@
+% =====================================================================
+% Notes on the Thiele SBI chapter (same Springer book series as ours)
+% Source: annotated_former_reviews/ThieleSBI.pdf
+%   Leander Thiele, "Machine Learning Techniques for Astrophysics and
+%   Cosmology: Simulation-Based Inference", arXiv:2605.10719 (2026).
+%   \citep{Thiele2026_SBI_review}
+% =====================================================================
+
+% ROLE FOR US: companion chapter in the SAME book series -- useful as a
+% structural/format reference and as the SBI counterpart to our GNN chapter.
+% Honest assessment: it is quite SHORT, especially in
+%   Sec. 4 (Applications in Cosmology and Astrophysics),
+%   Sec. 5 (Current frontier), and
+%   Sec. 6 (Summary and Outlook)
+% -- each is essentially a compact list. We should aim for fuller, more
+% example-rich versions of these in our own review.
+
+% --- What the chapter covers (brief) -------------------------------------
+%   Sec. 1 Motivation: SBI = parameter inference by training NNs on forward
+%     simulations; useful for (i) intractable likelihoods and (ii) time-critical
+%     posterior sampling.
+%   Sec. 2 Techniques: NPE (posterior), NLE (likelihood), NRE (ratio); plus
+%     alternatives, sequential versions, learned summaries, practical guidelines.
+%   Sec. 3 Diagnostics: basic tests, calibration/coverage (SBC, TARP),
+%     posterior validation against ground truth. (Strong emphasis: failures are
+%     subtle but invalidate results -- always run diagnostics.)
+%   Sec. 4 Applications (real-data only): cosmology -- BOSS galaxy redshift,
+%     weak lensing (DES, KiDS, HSC); astrophysics -- gravitational waves,
+%     supernova population analyses, photo-z, stellar params from spectroscopy,
+%     galactic-centre gamma-ray excess.
+%   Sec. 5 Frontier: (1) model expressivity / inductive biases (alternatives to
+%     discrete-time normalizing flows); (2) posterior fidelity with FINITE
+%     training sets -- identified as THE critical problem (sims are expensive).
+%     Fixes: improve coverage (ensembling, coverage-targeted objectives,
+%     balancing); augment the budget (analytic approximation of part of the
+%     likelihood, multi-fidelity training, cheap-sim training + accurate-sim
+%     correction).
+%   Sec. 6 Outlook: limited simulation budgets the key problem; cosmology hard
+%     (expensive sims, a single realization -- our one Universe); astrophysics
+%     more natural for SBI (catalogs of ~i.i.d. data vectors) but with more
+%     complex simulators.
+
+% --- THINGS WE COULD BE INSPIRED BY (Claude suggestions) -----------------
+%   * A dedicated DIAGNOSTICS / VALIDATION section. Thiele's strongest move is
+%     treating verification as first-class (coverage, SBC, TARP). Our review
+%     would benefit from an analogous "how to validate a GNN result / known
+%     failure modes" section -- oversmoothing, false symmetry claims
+%     \citep{BechlerSpeicher2023_graph_overuse}, train/test graph distribution
+%     shift, sensitivity to the (chosen) adjacency, etc.
+%   * A PRACTICAL DECISION GUIDE. Thiele gives a "brief guide to choosing among
+%     techniques." We already have the seeds (slide 73 layer/aggregation recs;
+%     slide 74 when-NOT-to-use); consider consolidating them into one explicit
+%     practitioner's decision guide.
+%   * A "real data vs simulations" AXIS. Thiele deliberately restricts
+%     applications to REAL data. Tagging GNN-astro applications by whether they
+%     run on real data vs simulations is a clean, honest organizing axis for our
+%     Applications section (and highlights how much is still simulation-only).
+%   * NAME THE CRITICAL PROBLEM. Thiele commits to "limited simulation budgets"
+%     as THE problem. We should likewise crisply identify the critical open
+%     problem(s) for GNNs in astro (e.g. scalability, oversmoothing/long-range,
+%     domain shift sim->real, interpretability at scale).
+%   * BUT GO LONGER where Thiele is thin: Applications, Frontier, Outlook should
+%     be substantially fuller and more example-driven in our chapter.
+
+% --- *** CITE AS ONE OF OUR OWN FRONTIERS *** ----------------------------
+% In our Frontier/Outlook section, cite \citep{Thiele2026_SBI_review} for the
+% direction of doing SBI WITH GNNs ON REAL DATA: GNNs as the learned
+% summary/compression network feeding an SBI pipeline (NPE/NLE/NRE) on
+% genuinely graph-structured astrophysical data. This is a natural marriage --
+% Thiele's chapter covers the SBI machinery, ours covers the graph
+% representation -- and it is an explicit goal the author looks forward to
+% pursuing. Connects to existing GNN+LFI/summary work in our bib, e.g.
+% \citep{deSanti2023_fieldlevel_LFI, Makinen2022_cosmicgraph_LSS,
+% VillanuevaDomingo2022_cosmicgraph_clustering}.

@@ -1,0 +1,963 @@
+% =====================================================================
+% Notes distilled from the summer-school lecture
+% Source: GNNs_summer_school_1.pdf (95 slides, ~2022 summer school)
+% Going slide-by-slide; keep-worthy material lands here, and items marked
+% [-> main.tex] are also copied into GNN_Astrophysics_Review_old/main.tex.
+% =====================================================================
+
+% --- Slide 1 (title) ----------------------------------------------------
+% KEEP (opening motif, potentially as a footnote):
+% Pair Euler's Seven Bridges of Konigsberg (1736 -- the birth of graph theory)
+% with the cosmic web. Hook: graph theory was born in 1736 from a puzzle about
+% bridges; today the same abstraction describes the largest structures in the
+% Universe. Good candidate for the opening figure / first-paragraph footnote.
+
+% --- Slide 2 (agenda) ---------------------------------------------------
+% KEEP (two things):
+%  (1) Framing motif: "the unreasonable efficiency of graphs / of GNNs for
+%      physics" -- a deliberate riff on Wigner's "unreasonable effectiveness of
+%      mathematics". Use as a recurring section motif in the review.
+%  (2) Pedagogical skeleton (mirror the lecture's arc): geometry basics ->
+%      what is a graph -> why graphs suit physics -> GNN mechanics (layers,
+%      operators, tasks) -> applications. Candidate ordering for the review's
+%      tutorial spine.
+
+% --- Slide 4 (section divider) + Slide 8  [-> main.tex DONE] -------------
+% KEEP as the OPENING of the entire review article (two sentences):
+%   "The history of physics is a story of geometry. Learning algorithms for
+%    the physical world must therefore be grounded in geometry."
+% (Slide 4 gives sentence 1; slide 8 gives sentence 2.) Inserted at the top of
+% the Introduction in GNN_Astrophysics_Review_old/main.tex.
+
+% --- Slide 3 (agenda w/ timings): DROPPED (logistics only). --------------
+
+% --- Slides 5--7 (Galilean invariances etc.) [notes only] ----------------
+% BIG-PICTURE POINT to make across slides 5-7: physics is DEFINED by
+% geometric assumptions -- symmetries, invariances, and equivariances. Build
+% the review's geometry section around this thesis.
+%
+% TO WRITE (a careful explanation of the vocabulary of symmetry):
+%   * symmetry  -- a transformation (group action) under which some structure
+%                  is preserved.
+%   * invariance -- $f(g\cdot x) = f(x)$: the output is unchanged by the action.
+%   * equivariance -- $f(g\cdot x) = \rho(g)\,f(x)$: the output transforms in
+%                  step with the input.
+%   * how they fit together: invariance is the special case of equivariance in
+%     which the output carries the TRIVIAL representation.
+% Span the full range of physical symmetries, from the ones we rarely think
+% about to the ones we build theories on:
+%   - crazy-fundamental but invisible: the Galilean invariances (homogeneity of
+%     space and time, Galilean boosts) -- slide 5;
+%   - learned early: the geometry behind Kepler's laws (central force =>
+%     conservation of angular momentum => equal-areas / areal velocity);
+%   - the geometric principles of Relativity (special: Lorentz/Poincare
+%     invariance; general: diffeomorphism invariance / the equivalence principle).
+%     CONCRETE EXAMPLE (backup slides 84-85): the Einstein field equations
+%     R_{mu nu} - (1/2) R g_{mu nu} + Lambda g_{mu nu} = (8 pi G / c^4) T_{mu nu}
+%     -- a tensor (geometric-object) equation on a curved manifold; physics
+%     written as coordinate-independent relations between geometric objects.
+%     The apotheosis of "physics is geometry"; pairs with the Thorne-Blandford
+%     Geometric-Principle quote (slide 52). Add to this examples list.
+% Tie to Noether: every continuous symmetry <-> a conservation law.
+
+% --- DISCUSSION TO INCLUDE: getting INVARIANCES from EQUIVARIANCES ---------
+% (Two complementary routes to the same fact; transcribed for later writing.)
+%
+% ROUTE A -- irreps / steerable picture.
+%   For a compact group $G$ (finite groups included), every finite-dimensional
+%   representation $Z$ splits canonically into isotypic components, one per
+%   irreducible representation (irrep) type $\lambda$:
+%   $Z = \bigoplus_\lambda Z_\lambda$. The trivial irrep ($\lambda=\mathbf 1$)
+%   is the one on which $G$ acts as the identity; a vector spans a copy of it
+%   iff $\rho(s)z=z\ \forall s\in G$ -- i.e. it is a FIXED POINT. Hence the
+%   fixed-point set $Z^G = Z_{\mathbf 1}$ IS exactly the trivial-irrep
+%   component. So "the output of $f\circ g$ is invariant" reads, in
+%   representation-theoretic language, as "the output populates only the
+%   trivial isotypic component" -- every non-trivial irrep channel is zero.
+%   For $SO(3)$: irreps indexed by integer $\ell\ge 0$, dimension $2\ell+1$,
+%   acting via the Wigner matrices $D^{(\ell)}(R)$. $\ell=0$ scalars (= the
+%   trivial rep => rotation-invariant), $\ell=1$ vectors, $\ell=2$ rank-2
+%   symmetric traceless tensors, ... A network is invariant iff its output
+%   lives entirely in the $\ell=0$ sector, no matter how many $\ell>0$ objects
+%   it shuffles internally. The symmetry SECTOR, not the group, does the work.
+%
+%   Why this is the SAME fact as inner-product contraction: by Clebsch-Gordan,
+%   $\ell_1\otimes\ell_2 = \bigoplus_{\ell=|\ell_1-\ell_2|}^{\ell_1+\ell_2}\ell$,
+%   and the trivial irrep $\ell=0$ appears iff $\ell_1=\ell_2$ (exactly once).
+%   Projecting two same-type features onto that single $\ell=0$ slot IS (up to
+%   normalization) the inner product. So "take the inner product of two
+%   equivariant features" and "keep only the $\ell=0$ part of their tensor
+%   product" are literally the same operation.
+%
+%   Design principle in practice (TFN / e3nn): keep $\ell>0$ channels alive
+%   through hidden layers (composition preserves equivariance); apply
+%   nonlinearities only to the rotation-invariant NORM of each feature so
+%   equivariance survives; read invariant predictions (energies, classes) off
+%   the $\ell=0$ outputs. Deep structural result: equivariance constraints on
+%   the linear maps reduce, for arbitrary representations, to constraints
+%   stated purely in terms of irreps. Physicist's shortcut: the
+%   Wigner-Eckart theorem / selection rules -- a scalar (invariant) built from
+%   tensor operators must be a singlet (the $\ell=0$ piece), and cross-$\ell$
+%   matrix elements that would have to transform non-trivially vanish.
+%   Cite: \citep{Serre1977_representations_finitegroups,
+%   FultonHarris1991_representationtheory_course} (isotypic decomposition),
+%   \citep{Folland1995_harmonicanalysis_compactgroups,
+%   BroeckerTomDieck1985_compactliegroups} (Peter-Weyl / averaging),
+%   \citep{Thomas2018_TFN_tensorfield, Kondor2018_clebschgordan_nets,
+%   Weiler2018_3Dsteerable_CNN, Geiger2022_e3nn_library,
+%   Batzner2022_NequIP_interatomic, Deng2021_vectorneurons_SO3} (architectures),
+%   \citep{CohenWelling2016_groupequivariant_CNN, CohenWelling2017_steerable_CNN,
+%   WeilerCesa2019_E2steerable_CNN, KondorTrivedi2018_equivariance_compactgroups,
+%   Cohen2019_equivariantCNN_homogeneous} (reduction to irreps),
+%   \citep{LangWeiler2021_wignereckart_kernels} (Wigner-Eckart bridge).
+%
+% ROUTE B -- Villar-Hogg invariant-theory picture (the dual, irrep-free route).
+%   "Scalars are universal" \citep{Villar2021_scalars_universal}: nonlinear
+%   $O(d)$-equivariant functions can be expressed UNIVERSALLY in terms of
+%   invariant scalars -- the pairwise dot products and contractions of the
+%   input vectors/tensors. Engine: the First Fundamental Theorem of invariant
+%   theory for $O(d)$ -- every $O(d)$-invariant polynomial of a set of vectors
+%   is a polynomial in their pairwise dot products. So inner-product
+%   contraction is not just A way to build invariants; it is a COMPLETE way.
+%   Two routes to the invariant sector: irreps (track $\ell$, read off
+%   $\ell=0$) vs the algebra of invariant scalars (dot products / contractions)
+%   -- same destination, the scalar route often simpler and more scalable.
+%   Follow-ups: \citep{Yao2021_scalars_dynamics} (scalar method on the springy
+%   double pendulum; beats irrep baselines; open source),
+%   \citep{BlumSmith2023_ML_invarianttheory} (invariant-theory backbone --
+%   FFT/SFT, the rigorous "why contractions are complete"),
+%   \citep{Villar2023_units_equivariance} (units / dimensional equivariance),
+%   \citep{Villar2023_passive_symmetries} (passive symmetries, coordinate
+%   freedom). Cleanest pairing to cite: \citep{Villar2021_scalars_universal}
+%   (result + physics framing) with \citep{BlumSmith2023_ML_invarianttheory}
+%   (proof machinery).
+%
+% DEEP SETS, made explicit -- discuss alongside permutation invariance:
+%   any permutation-invariant function of points $\vec r_i$ can be written
+%   $\rho(\sum_i \phi(\vec r_i))$ (Deep Sets). Hainje \& Hogg 2025
+%   \citep{Hainje2025_triangle_deepsets} give the explicit polynomial Deep-Sets
+%   form for the area of a triangle -- a charming concrete worked example of a
+%   permutation-invariant readout, with a tie to $n$-point statistics in
+%   cosmology and map-reduce. Use as a pedagogical example for permutation
+%   invariance / pooling.
+
+% --- Slides 9--10 (domain geometry vs signal geometry) [notes only] -------
+% (Slides 6-8 skipped for now.)
+% Core distinction to draw: when choosing an architecture there are TWO
+% separate geometric considerations.
+%
+%   (1) DOMAIN geometry -- the support on which the data live (a regular grid /
+%       lattice, a sphere, an irregular point cloud, a general graph...).
+%       KEY POINT: sometimes one MUST adopt a particular algorithm simply
+%       because it is the only one capable of correctly expressing the data in
+%       the domain in which it exists, WITHOUT imposing symmetries / geometries
+%       that do not natively follow from that domain. E.g. forcing data onto a
+%       grid so a CNN can run invents translational structure that isn't there;
+%       for an irregular point set a GNN may be the only faithful choice. The
+%       algorithm's built-in symmetries should be a subset of the domain's.
+%
+%   (2) SIGNAL geometry -- the structure of the signal/function defined ON the
+%       domain, which can carry its own geometry independent of the support.
+%       E.g. a SPHERICAL signal sampled on a nice (flat) grid; a galaxy image;
+%       a scalar field vs a vector/tensor field. The signal's geometry brings
+%       its own symmetry demands (e.g. SO(3) for a field on the sphere) even
+%       when the domain looks Euclidean.
+%
+% Slide examples: domain = regular grid; signal = a diagonal line on that grid
+% (slide 9) or a JWST galaxy image (slide 10); plus the "spherical signal on a
+% grid" case.
+%
+% RECURRING THESIS (to hammer throughout the review): when picking an
+% algorithm, carefully consider BOTH the native geometry of the DOMAIN and the
+% native geometry of the SIGNAL. Do not impose structure/symmetry the data do
+% not have, and do not throw away structure they do have. [Recurring motif --
+% reuse this framing in the architectures and applications sections.]
+%
+% *** TODO FIGURE (emphasize): make a dedicated figure illustrating the
+% DOMAIN vs SIGNAL geometry distinction *** -- e.g. the same regular-grid
+% domain carrying different signals (a line / a field / a galaxy image), and
+% contrasted domains (grid vs sphere vs point cloud vs graph), showing which
+% algorithm each admits. This figure should anchor the recurring thesis above.
+
+% --- Slide 11 (zoo of algorithms for different geometries): SKIPPED --------
+% (Mainly a further comment on the zoo of algorithms befitting different
+% geometries; nothing new beyond the domain/signal point.)
+
+% --- Slide 12 (epigraph) [notes only] -------------------------------------
+% *** QUOTE TO WORK INTO THE PAPER (emphasize) ***
+%   "La connaissance de certains principes remplace facilement la connaissance
+%    de certains faits."
+%   ("The knowledge of certain principles easily replaces the knowledge of
+%    certain facts.")
+%                                              -- Claude Adrien Helvetius
+% Ideal epigraph for a geometry-first review: knowing the right principles
+% (symmetries/geometry) substitutes for memorizing facts (data). Candidate
+% chapter/section epigraph or framing line for the introduction.
+% (Note: slide misspells "connaisance"; correct French is "connaissance".)
+
+% --- Slide 21 (Geometric blueprint for deep learning) [saved verbatim] ----
+% The Geometric Deep Learning blueprint (Bronstein et al.). Building blocks:
+%   * Group-equivariant operator,        F
+%   * Group-invariant local pooling op., P_local
+%   * Non-linear operator,               sigma
+%   * Global invariant pooling operator, P_global
+%   * Decoder function,                  f
+%   Composed model:
+%       h = f( P_global( { P_local( sigma(F) ) } ) )
+%   Pipeline (as drawn): Equivariant layer -> Local pooling layer ->
+%   Equivariant layer -> Invariant global pooling -> output.
+%   [This is the master template every architecture in the review specializes;
+%    cite \citep{Bronstein2021_geometricDL_book}.]
+
+% --- Slides 13--20 (CNN case study from basic principles) -----------------
+% Slides 13/14 set up the a-priori requirements; 15 = translation equivariance
+% (commuting diagram: translate-then-featurize = featurize-then-translate);
+% 17/18 = scale separation / local-deformation invariance (coarse-graining P,
+% f' on the coarse grid approximates f; "dog" at many scales); 20 = translation
+% invariance of the output ("dog" at any position). Slides 16/19 are builds.
+%
+% DRAFT PARAGRAPH (CNN as a worked example of the blueprint -- candidate prose):
+%
+% Since many of us have extensive intuition with images, but not with graphs,
+% let us first consider how these principles directly lead to the construction
+% of a Convolutional Neural Network. Suppose we demand three things a priori of
+% a model acting on an image: translational \emph{equivariance} of its internal
+% operations, scale separation, and translational \emph{invariance} of its
+% output. The first requirement is the decisive one: insisting that a local,
+% linear operation commute with translations forces it to share its weights
+% across the image -- that is, to be a \emph{convolution}. Translating the
+% input and then convolving gives precisely the same feature map as convolving
+% and then translating, so features are computed the same way everywhere.
+% Scale separation -- the assumption that the signal can be coarse-grained
+% without destroying what matters, so that a function on a coarsened grid
+% approximates the function on the fine one -- justifies interleaving these
+% convolutions with \emph{local pooling}, stacking them into a multi-scale
+% hierarchy whose receptive fields grow layer by layer (a ``dog'' remains a
+% ``dog'' across scales and small deformations). Finally, demanding that the
+% \emph{output} be translation-invariant (a ``dog'' anywhere in the frame is
+% still a ``dog'') is met by a single \emph{global pooling} that collapses the
+% equivariant feature map into one invariant prediction, optionally followed by
+% a decoder. Reassembled, these pieces are nothing other than the familiar CNN
+% -- stacked convolution--nonlinearity--pooling blocks ending in a global pool
+% -- and it is exactly the geometric blueprint
+% $h = f(P_{\mathrm{global}}(\{P_{\mathrm{local}}(\sigma(F))\}))$ with the
+% group taken to be translations. The same recipe, with a different symmetry
+% group and a different notion of locality, will give us graph neural networks.
+
+% --- Slide 22 ("The Gospel of The Graph") [notes only] --------------------
+% POINT to make: starting from GRAPHS lets us think more freely and adaptively
+% about our algorithms. The graph is the most general / least committed
+% structure, so anything that works can be DERIVED from it: a CNN, a
+% Transformer, etc., are all special cases of the GNN -- each one a GNN
+% specialized (and optimized) for a particular domain/symmetry. A CNN is the
+% GNN on a regular grid with translation symmetry; a Transformer is the GNN on
+% a fully-connected graph with attention. This mirrors Velickovic's framing
+% ("message passing all the way up" / "everything is connected"):
+% \citep{Velickovic2022_messagepassing_up, Velickovic2023_everythingconnected_review}.
+% Ties back to the slide-2 "unreasonable efficiency" motif and the CNN
+% derivation (slides 13-20): same blueprint, swap the group / locality.
+% Rhetorical payoff: begin from the graph not because it is fancy, but because
+% it is the humble, general substrate from which the specialized successes fall
+% out as corollaries.
+
+% --- Slides 23--40 (What is a graph: examples + definitions) --------------
+%
+% EXAMPLES OF GRAPHS (slides 24-30) -- "anything is a graph":
+%   * Molecules are graphs (atoms = nodes, bonds = edges).
+%   * The Solar System is a graph (bodies = nodes, gravitational interactions
+%     = edges).
+%   * Neutrino observatories are graphs (e.g. IceCube DOMs = nodes).
+%   * Pictures are graphs (pixels = nodes on a regular grid -- a structured
+%     special case).
+%   * Galaxy evolution is a graph (dark-matter merger trees).
+%   Slide 32: "the harder question is: what is NOT a graph?" -- essentially
+%   everything is a special case of a graph (sets, grids, sequences). Ties back
+%   to the slide-22 "gospel of the graph".
+%
+% ASTROPHYSICAL GRAPH EXAMPLES to feature alongside: merger tree (Mangrove),
+% cosmic web / LSS catalogue, IceCube event, molecule (for contrast).
+%
+% DEFINITIONS (copy + expand from Mangrove sec 3.1 \citep{Jespersen2022_mangrove}
+% and slides 33-40; notation follows Battaglia et al. 2018 / Cranmer et al.
+% 2019 \citep{Battaglia2018_relational_GN}):
+%   * Graph G = (V, E, U):
+%       - V = {v_i}_{i=1..N^v}: set of node attribute vectors, dimension D^v.
+%       - E = {(e_k, r_k, s_k)}: set of edge attribute vectors (dim D^e) with
+%         receiver index r_k and sender index s_k in {1..N^v} for the k-th edge.
+%       - U: the global (graph-level) feature vector.
+%   * Adjacency matrix A: binary N^v x N^v matrix encoding connectivity
+%     (A_ij = 1 iff an edge connects i and j).
+%   * Directed vs undirected: merger trees are DIRECTED (information flows one
+%     way -- forward in time, preserving causality); undirected graphs have a
+%     symmetric A. Present the directed case as the general one.
+%   * Neighborhood N(i): the nodes connected to i by an edge; for a directed
+%     graph distinguish the INCOMING (r_k = i) and OUTGOING (s_k = i)
+%     neighborhoods (Mangrove uses the incoming neighborhood).
+%
+%   EXPAND -- dense vs sparse connectivity (slide 38): a real adjacency matrix
+%   is almost always SPARSE, so it is stored not as a dense N x N matrix but as
+%   an EDGE INDEX -- the two-vector "sending nodes || receiving nodes" (COO)
+%   format, e.g. A above becomes [[0,1,2,3,3,3], [3,3,3,0,1,2]]. This is the
+%   `edge_index` of PyTorch Geometric / DGL; it avoids O(N^2) storage and is how
+%   message passing is actually implemented. Worth stating explicitly.
+%
+%   Global features U (slide 39): can be PHYSICAL (e.g. U = [Omega_m, sigma_8]),
+%   STATISTICAL / manually inserted (e.g. U = [mu_x, sigma_x, max(x), min(x),
+%   ... P_n(x)] -- moments/percentiles; ties to the pooling / HistPool
+%   discussion), or fully LEARNABLE.
+%
+% *** TODO FIGURE + PYTHON SCRIPT (emphasize) ***
+%   Make a figure of several SKETCH GRAPHS with their adjacency matrices, in the
+%   style of slide 37 (e.g. a star/tree, a 4-cycle, a complete graph K4), and
+%   include the sparse edge-index form (slide 38). Also show ASTROPHYSICAL
+%   graph examples (merger tree, cosmic web, IceCube event, molecule). Write a
+%   Python script (networkx + matplotlib) to generate the sketch graphs and
+%   their adjacency matrices reproducibly. [Companion to computational_modules.py.]
+%
+% *** LOCKED NOTATION CONVENTIONS for the review (decided 2026-05-30) ***
+%   - Standardize on the Battaglia 3-tuple  G = (V, E, U)  (globals from the
+%     start).
+%   - Node features written v_i (edges (e_k, r_k, s_k)), per Mangrove/Battaglia.
+%   - Connectivity: introduce the adjacency matrix A for intuition, but
+%     EMPHASIZE the sparse edge-index (sender || receiver) as the object used in
+%     practice.
+%   - Define the DIRECTED case first (incoming/outgoing neighborhoods), then
+%     discuss the undirected case too (it is extremely common), and spell out
+%     WHEN to pick which:
+%       * Directed -- when the relation is inherently asymmetric / causal /
+%         ordered: merger trees and assembly histories (forward in time),
+%         flows, citation hierarchies. Information passes one way; respects
+%         causality.
+%       * Undirected (symmetric A) -- when the relation is symmetric: spatial
+%         proximity / radius- or kNN-graphs over point clouds, molecular bonds,
+%         pairwise gravitational interactions. Simpler, cheaper, the common
+%         default; implementations often store an undirected edge as two
+%         opposing directed edges.
+%       * Rule of thumb: let the physics of the relation decide -- impose
+%         directedness only when the asymmetry is real (do not invent it), and
+%         do not symmetrize away a genuine ordering (ties to the domain/signal-
+%         geometry thesis).
+
+% --- Slides 41--46 (Inevitable graph structure) [notes only] --------------
+% Concrete astrophysical cases where a graph is not a choice but a necessity --
+% mapped onto the domain / signal / geometry triad (slides 9-10):
+%
+%   * DOMAIN inevitable -- the IceCube Neutrino Observatory (slides 41-44).
+%     The detector is an irregular 3D array of sensor strings (DOMs): a densely
+%     instrumented DeepCore core surrounded by a coarser, roughly hexagonal
+%     outer array, strung vertically through the ice. It is emphatically NOT a
+%     regular grid. A neutrino event (slide 42) is a pattern of photon hits
+%     (with timing and charge) recorded on that irregular sensor set -- a signal
+%     living on a graph whose nodes are the sensors. Slide 44 ("What happens if
+%     we use CNNs on this?") is the punchline: a CNN presupposes a regular grid,
+%     so applying it forces voxelization/interpolation onto a lattice the
+%     detector does not have -- inventing structure and distorting the true
+%     geometry. The graph is the only faithful domain.
+%     Cite: \citep{Choma2018_IceCube_classification, Abbasi2022_IceCube_lowenergy,
+%     Soldin2025_IceCube_GCN}.
+%
+%   * SIGNAL inevitable -- dark-matter merger trees (slide 45). A halo's
+%     assembly history is a branching merge tree: inherently graph-structured,
+%     with no faithful grid/sequence representation. The "signal" (the
+%     evolutionary history itself) is the graph.
+%     Cite: \citep{Jespersen2022_mangrove, Chuang2024_mergertree_GNN,
+%     Nguyen2024_FLORAH_assembly}.
+%
+%   * GEOMETRY inevitable -- the cosmic web / large-scale structure (slide 46).
+%     The spatial arrangement of halos/galaxies is a point cloud whose relevant
+%     geometry is relational: a proximity (radius- or kNN-) graph over the
+%     tracers. The connectivity IS the geometry.
+%     Cite: \citep{Makinen2022_cosmicgraph_LSS,
+%     VillanuevaDomingo2022_cosmicgraph_clustering, Sousbie2011_cosmicweb_theory}.
+%
+% Through-line: these are the worked, astro-native payoff of the domain/signal-
+% geometry thesis -- "sometimes the graph is the only structure that does not
+% lie about the data." Use IceCube + merger trees as the lead examples.
+
+% --- Slides 47--48 (Inductive bias) ---------------------------------------
+% *** DIRECT QUOTE TO KEEP, place PROMINENTLY *** (slide 48):
+%       "Do not learn things that you already know."
+% Candidate as a section epigraph / pull-quote for the inductive-bias section.
+%
+% DISCUSSION (inductive biases): we learn more efficiently when we hand the
+% model the heuristics we, as scientists, ALREADY know about our systems --
+% i.e. we should not spend capacity and data relearning known structure. For
+% GNNs this prior knowledge can be injected in a few complementary ways:
+%   (i)  through IN-/EQUI-VARIANCES -- baking in the symmetries of the problem
+%        (translation, rotation/SO(3), permutation, units, ...; see the
+%        symmetry discussion above);
+%   (ii) by RESTRUCTURING THE GRAPH itself -- e.g.:
+%        - encoding different TIME RESOLUTIONS in merger trees (choosing
+%          snapshot spacing, pruning/coarsening high-redshift branches, etc.):
+%          \citep{Jespersen2022_mangrove, Chuang2024_mergertree_GNN,
+%          Jespersen2026_environment_assembly};
+%        - a notion of LOCALITY (as for cosmic graphs / gravity, connecting
+%          only nearby nodes);
+%        - CAUSAL relations we already know (e.g. directed, time-ordered edges
+%          in merger trees).
+% STRESS (important caveat to state plainly): none of this means a more
+% flexible, unconstrained function COULD NOT discover these solutions on its
+% own -- it can. Injecting the prior simply makes learning FASTER, CHEAPER,
+% EASIER, more ROBUST, and more INTERPRETABLE (data efficiency, not
+% expressivity, is the win).
+%
+% Two counter-weights to cite and discuss:
+%   * The graph is such a STRONG inductive bias that it can actively MISLEAD an
+%     algorithm when the imposed structure is wrong -- graphs used when they
+%     shouldn't be. Cite \citep{BechlerSpeicher2023_graph_overuse}
+%     ("Graph Neural Networks Use Graphs When They Shouldn't").
+%   * SOFT geometric constraints (Andrew Gordon Wilson et al.) can learn BETTER
+%     than hard constraints: converting hard architectural symmetries into soft
+%     priors keeps the inductive bias while staying resilient to approximate or
+%     misspecified symmetries -- the trade is weaker (softer) guarantees in
+%     return for flexibility. Cite \citep{Finzi2021_RPP_softequivariance}
+%     (Residual Pathway Priors). Connects to the "weak geometric constraints"
+%     idea in notes_to_self.
+% Net message: inject what you genuinely know (hard, when the symmetry is
+% exact; soft, when it is only approximate), but stay alert that a misspecified
+% graph/symmetry is itself a bias that can hurt.
+
+% --- Slide 49 (The Unreasonable Efficiency of Graphs for Physics) ---------
+% KEEP near-verbatim as a CONCLUDING SUBSECTION (subsection title = the
+% "unreasonable effectiveness" quip, riffing on Wigner):
+%
+%   \subsection*{The Unreasonable Efficiency of Graphs for Physics}
+%   Three reasons graphs are so well suited to physics -- and a recap of the
+%   first half of the review:
+%     * Domain/signal adaptability -- graphs faithfully represent whatever
+%       support the data live on (irregular detectors, trees, point clouds)
+%       without inventing structure (slides 9-10, 41-46).
+%     * Inductive biases -- known structure (locality, time resolution, causal
+%       edges) can be handed to the model rather than relearned (slides 47-48).
+%     * Symmetry -- in-/equi-variances of the problem are built in directly
+%       (slides 5-21).
+%   [Use this as the closing subsection of the "why graphs for physics" part;
+%   the same triplet then frames "why GNNs for physics" in the second half.]
+%
+% ADDITIONAL NOTE (naturalness + interpretability) -- to weave in here:
+%   Graphs and GNNs are extremely natural for the WAY PHYSICISTS THINK about
+%   physical systems: we describe the world as a set of objects (nodes) and the
+%   interactions/relations between them (edges) -- forces along edges, fluxes
+%   between cells, couplings between bodies -- much like a Feynman diagram or a
+%   free-body diagram. A GNN's message passing mirrors this exactly: messages
+%   on edges are the learned analogues of interactions, node updates the
+%   analogues of state changes, and the readout the analogue of an aggregate
+%   observable. This structural match is a large part of WHY they work so well
+%   AND why they are so interpretable for physics -- learned edge/message
+%   functions can often be read as physical quantities (e.g. forces), and the
+%   compositional, relational structure tracks how we already reason about the
+%   system. (Ties to the symbolic-regression / interpretability thread:
+%   \citep{Cranmer2019_symbolicphysics_GNN, Cranmer2020_symbolicregression_inductivebias,
+%   Battaglia2018_relational_GN}.)
+
+% --- Slide 50 (The Unreasonable Efficiency of GNNs for Physics) -----------
+% Reinforces slide 49. The "epic handshake" meme: two clasped arms labelled
+%   GROUP THEORY / GNNS   <-->   PRIOR KNOWLEDGE / DATA FLEXIBILITY
+% i.e. GNNs are where these meet -- a memorable restatement of the SAME three
+% pillars: symmetry (= group theory), inductive bias (= prior knowledge), and
+% domain/signal adaptability (= data flexibility). Keep as a light callback /
+% reinforcement of the concluding-subsection points above.
+%
+% *** EMPHASIZE: it is the COMBINATION of these three that makes GNNs so
+% strong, not any one alone. *** Symmetry, prior-knowledge inductive biases,
+% and data/domain flexibility are each useful on their own, but their real
+% power for physics comes from holding them TOGETHER in one framework: a GNN
+% lets you bake in exact symmetries AND known structure (locality, causality,
+% time resolution) WHILE remaining flexible enough to fit whatever domain/
+% signal the data actually live on. The whole is greater than the sum -- make
+% this the punchline of the concluding subsection (and of the handshake meme).
+
+% --- Slide 52 (the "Geometric Principle" quote) [quote to include] --------
+% SOURCE: Kip S. Thorne & Roger D. Blandford, *Modern Classical Physics*
+% (Princeton Univ. Press, 2017), Chapter 1 -- the "Geometric Principle".
+% \citep{ThorneBlandford2017_modernclassicalphysics}
+% Full (original) quote -- save to include as an epigraph / framing quote:
+%   "In this book, a central theme will be a Geometric Principle: The laws of
+%    physics must all be expressible as geometric (coordinate-independent and
+%    reference-frame-independent) relationships between geometric objects
+%    (scalars, vectors, tensors, ...) that represent physical entities."
+%   -- Thorne & Blandford, Modern Classical Physics (2017).
+% (The slide paraphrases the opening as "In modern physics ...".)
+%
+% SIMILAR / KINDRED QUOTES (candidate epigraphs -- verify exact wording before
+% final use):
+%   * [CONFIRMED KEEP] Galileo Galilei, Il Saggiatore / The Assayer (1623),
+%     \citep{Galileo1623_assayer_mathematics}, full passage (Drake translation):
+%       "Philosophy is written in this grand book, the universe, which stands
+%        continually open to our gaze. But the book cannot be understood unless
+%        one first learns to comprehend the language and read the letters in
+%        which it is composed. It is written in the language of mathematics, and
+%        its characters are triangles, circles, and other geometric figures,
+%        without which it is humanly impossible to understand a single word of
+%        it; without these, one wanders about in a dark labyrinth."
+%   * [CONFIRMED KEEP] Hermann Weyl, Symmetry (Princeton Univ. Press, 1952),
+%     \citep{Weyl1952_symmetry}, full quote:
+%       "Symmetry, as wide or as narrow as you may define its meaning, is one
+%        idea by which man through the ages has tried to comprehend and create
+%        order, beauty, and perfection."
+%     [NB: this is also slide 77 of the deck -- cross-reference when we get
+%     there.]
+%   * Eugene P. Wigner (1960), "The Unreasonable Effectiveness of Mathematics in
+%     the Natural Sciences" -- the source of our recurring "unreasonable
+%     efficiency" motif.
+%   * Felix Klein, Erlangen Programme (1872): a geometry is the study of the
+%     properties of a space that are invariant under a given group of
+%     transformations.  [the conceptual root of Geometric Deep Learning --
+%     Bronstein et al. \citep{Bronstein2021_geometricDL_book} build on exactly
+%     this; pair the two.]
+%   * (Optional, GR flavour) Wheeler, in Misner-Thorne-Wheeler Gravitation
+%     (1973): "spacetime tells matter how to move; matter tells spacetime how
+%     to curve."  [physics AS geometry.]
+% Use Thorne & Blandford as the lead quote; Klein + Bronstein make the explicit
+% bridge to GDL; Galileo/Weyl/Wigner as the historical chorus.
+
+% --- Slide 53 (Basic GNN structure) ---------------------------------------
+% ANATOMY of one message-passing step (the diagram): a central node receives
+% directed edges from its neighbours; the neighbour messages are AGGREGATED by
+% a permutation-invariant operator; the node is then UPDATED by combining a
+% function of its own state with a function of the aggregate:
+%     h_i' = f(h_i) + g( BIGOPLUS_{j in N(i)} phi(h_i, h_j) ).
+% Concretely this is the GraphSAGE update used in Mangrove,
+%     v_i' = W_1 v_i + W_2 * mean_{j in N(i)} v_j,
+% and the general message-passing / MPNN form \citep{Battaglia2018_relational_GN,
+% Jespersen2022_mangrove}.
+%
+% MAKE CLEAR: at their most basic these layers are EASY to understand -- and
+% strikingly NATURAL for a physicist, because they look exactly like an
+% interaction summed over bodies. Draw the explicit analogy to an N-body
+% gravitational velocity (Euler / leapfrog) update, where the accelerations
+% from all other masses SUPERPOSE (the masses add up):
+%     \mathbf{v}_i^{t+1} = \mathbf{v}_i^{t}
+%        + \Delta t \sum_{j \neq i}
+%          \frac{G\,m_j(\mathbf{x}_j^{t}-\mathbf{x}_i^{t})}
+%               {|\mathbf{x}_j^{t}-\mathbf{x}_i^{t}|^{3}} .
+% The correspondence is term-by-term:
+%     v_i^t                         <->  f(h_i)            (carry-forward self term)
+%     sum_{j} G m_j (x_j-x_i)/r^3   <->  g(aggregate)      (summed neighbour pull)
+%     G m_j (x_j - x_i)/r^3         <->  phi(h_i, h_j)     (per-edge message / force)
+%     sum_{j != i}                  <->  BIGOPLUS_{N(i)}   (permutation-invariant agg.)
+%     the leading "+"               <->  residual node update.
+% So a GNN layer is just a learnable, generalized force law plus a one-step
+% integrator -- summing pairwise interactions over neighbours and adding them
+% to the current state. This is WHY message passing feels so natural to
+% physicists (and why the learned edge function can often be read back as a
+% physical force; ties to symbolic regression \citep{Cranmer2019_symbolicphysics_GNN,
+% Lemos2023_orbitalmechanics_symbolic, SanchezGonzalez2020_GNS_physics}).
+
+% --- Slide 54 (The Unreasonable Efficiency of GNNs for Physics) -----------
+% The GNN-side mirror of slide 49 (which was about GRAPHS). Roadmap/opening for
+% the "why GNNs for physics" subsection -- three reasons, each elaborated by the
+% following slides:
+%   * A natural abstraction of localized physical systems (message passing =
+%     summed local interactions / a learnable force law; slides 53, 55).
+%   * Embeds inductive biases (slide 57).
+%   * Can embed arbitrary symmetries -- incl. rotational invariance (slide 59)
+%     and the must-have permutation symmetry (slides 60-62).
+% Use as the section-opening triplet, paralleling the slide-49 concluding
+% triplet for graphs (and the handshake meme). Note the deliberate "graphs ->
+% GNNs" rhyme between the two "Unreasonable Efficiency" subsections.
+
+% --- Slides 55--58 (elaborating the GNN-for-physics triplet) --------------
+% Slide 55 -- "Natural abstraction for physics" (roadmap bullet 1): a physical
+%   system drawn as OBJECTS (nodes) joined by their pairwise INTERACTIONS/FORCES
+%   (edges) -- F(1-2), F(2-3), F(1-3) -- with a Newton portrait: the free-body-
+%   diagram / Newtonian-mechanics picture. This is the GNN counterpart of the
+%   graphs' "domain/signal adaptability": the relational abstraction (objects +
+%   interactions) is already how physics is written. Reinforces the slide-53
+%   force-law analogy (message = force, sum over neighbours = superposition).
+%   (Backup slide 91 repeats this "Natural abstraction for physics" point --
+%   fold it in here as another instance of the recurring "graphs and GNNs are
+%   natural abstractions of physics" theme; add to the examples list.)
+% Slide 56, 58 -- BUILD/TRANSITION slides only (grey out the triplet, spotlight
+%   bullet 2 then bullet 3); no new content, they just sequence into inductive
+%   biases (57) and symmetry (59+).
+% Slide 57 -- the maxim "Do not learn things that you already know" again, now
+%   in the GNN inductive-bias context. Same quote already captured at slide 48;
+%   reinforces that GNNs let us EMBED what we already know rather than relearn it.
+
+% --- Slide 63 (Geometric blueprint -- REMINDER, place FIRST) --------------
+% Quick recap of the GDL blueprint (identical to slide 21) -- in the review,
+% RESTATE it at the head of the "implementing symmetries" material so the
+% reader has the scaffold before we discuss enforcing specific symmetries:
+%   building blocks F (equivariant), P_local, sigma, P_global, decoder f, with
+%   h = f( P_global( { P_local( sigma(F) ) } ) ). Every specific symmetry below
+%   is slotted into this template. [See the slide-21 transcription;
+%   \citep{Bronstein2021_geometricDL_book}.]
+
+% --- Slides 60--62 (Must-have symmetry: PERMUTATION) ----------------------
+% The one non-negotiable symmetry of graphs. With P a permutation matrix, X the
+% node-feature matrix, A the adjacency matrix:
+%   * GLOBAL / graph-level outputs must be INVARIANT:
+%         f(PX, P A P^T) = f(X, A)                          (Invariance)
+%   * NODE/EDGE-level outputs must be EQUIVARIANT:
+%         F(PX, P A P^T) = P F(X, A)                        (Equivariance)
+% KEEP THIS DISTINCTION EXPLICIT (it is important and often conflated): a
+% graph-level prediction (one output for the whole graph) must not depend on
+% node ordering at all (invariance), whereas per-node / per-edge predictions
+% must be reordered CONSISTENTLY with the relabelling (equivariance).
+%
+% MAIN POINT to land: node relabelling / permutation is NOT important -- what
+% matters is that the RELATIONS between nodes are preserved. P A P^T is exactly
+% "relabel the rows and columns of A": the labels move, the connectivity does
+% not.
+%
+% FIGURE -- KEEP the MOLECULE figure (slides 61-62) for the paper: the same
+% molecule with nodes relabelled by P, showing (61) the GLOBAL output unchanged
+% (invariance) and (62) the NODE-level outputs {OH, CH, C, C} -> {C, C, CH, OH}
+% permuted consistently (equivariance).
+%   *** MUST ADD (emphasize): a panel that shows the ADJACENCY MATRIX
+%   explicitly -- A next to its relabelled version P A P^T -- to demonstrate
+%   that the RELATIONS between objects are preserved under the permutation.
+%   This is the crux: the permutation only renames nodes; because A -> P A P^T
+%   leaves the connectivity intact, any function built to respect it is blind
+%   to the (arbitrary) labelling. ***
+
+% --- NEW SECTION: Implementing OTHER symmetries (invariances & equivariances)
+% Permutation symmetry is built into a GNN BY CONSTRUCTION (the permutation-
+% invariant neighbourhood aggregation). OTHER symmetries are imposed by
+% CHOOSING the features and update rules so the desired group action commutes
+% with the network -- invariant features for invariant outputs, equivariant
+% features for equivariant outputs. Slide 59 is the canonical example: get
+% rotational (and translational) invariance by feeding only invariant scalars,
+%       F({h, x_vec}) -> F(h, | x_i - x_j | )
+% i.e. replace absolute positions with pairwise DISTANCES.
+%
+% Suggested symmetries + capturing equations (build the section around these):
+%   * Translation invariance -- depend only on differences:
+%       m_ij = phi(h_i, h_j, x_i - x_j)        (absolute origin removed).
+%   * Rotation+translation (E(3)) INVARIANCE -- depend only on distances:
+%       m_ij = phi(h_i, h_j, || x_i - x_j ||)  [slide 59]; more generally on the
+%       invariant scalars / dot products -- ties to Villar-Hogg "scalars are
+%       universal" \citep{Villar2021_scalars_universal}.
+%   * E(n)-EQUIVARIANCE (EGNN) -- keep positions as equivariant features and
+%     update them along relative directions:
+%       m_ij = phi_e(h_i, h_j, || x_i - x_j ||^2)
+%       x_i' = x_i + sum_{j != i} (x_i - x_j) phi_x(m_ij)
+%       h_i' = phi_h(h_i, sum_j m_ij)
+%     => h_i invariant, x_i equivariant. \citep{GarciaSatorras2021_EGNN_equivariant}.
+%   * SO(3) steerable / tensor features -- carry l-indexed (Wigner-D) features,
+%     combine via Clebsch-Gordan tensor products, read invariants off the l=0
+%     channel (ties to the irrep discussion above).
+%     \citep{Thomas2018_TFN_tensorfield, Geiger2022_e3nn_library,
+%     Batzner2022_NequIP_interatomic}.
+%   * Reflection / parity (O(3) vs SO(3)) -- distinguish scalars from
+%     pseudoscalars, vectors from pseudovectors (track each feature's parity).
+%   * Units / scaling equivariance -- build from dimensionless ratios.
+%     \citep{Villar2023_units_equivariance}.
+%   * Lorentz / Poincare invariance (relativistic / particle physics) -- use
+%     Minkowski inner products <x_i, x_j>_eta in place of Euclidean ones.
+%   * SOFT constraints -- when a symmetry is only approximate, impose it softly
+%     rather than hard \citep{Finzi2021_RPP_softequivariance}.
+% Recurring message: choose the features/updates so the group action passes
+% through the network as INVARIANCE (global readouts) or EQUIVARIANCE
+% (node/edge outputs) -- the constructive, practical face of the symmetry
+% discussion from slides 5-21.
+
+% --- Slides 64--67 (the three propagation-layer "flavours") ---------------
+% Put into its OWN SUBSECTION, "Common GNN propagation layers", keeping the
+% three equations directly. Slides 65-67 are progressive builds emphasising
+% each flavour in turn; the arrow = increasing complexity / expressivity /
+% training time (the same continuum as the "Conventional" band in
+% figures/computational_modules.py). Draft subsection (real LaTeX) below:
+
+\subsection{Common GNN propagation layers}
+The propagation layer comes in three canonical ``flavours'' (Bronstein et al.;
+Veli\v{c}kovi\'c), in order of increasing expressivity -- and of increasing
+complexity and training cost. With node features $\mathbf{x}_u$, neighbourhood
+$\mathcal{N}_u$, edge features $\mathbf{e}_{uv}$, a permutation-invariant
+aggregator $\bigoplus$, and learnable maps $\psi$ (message) and $\phi$
+(update):
+%
+\begin{align}
+\text{Convolutional:}\quad
+  \mathbf{h}_u &= \phi\!\left(\mathbf{x}_u,\ \bigoplus_{v\in\mathcal{N}_u}
+       c_{vu}\,\psi\!\left(\mathbf{x}_v\right)\right) \\[2pt]
+\text{Attentional:}\quad
+  \mathbf{h}_u &= \phi\!\left(\mathbf{x}_u,\ \bigoplus_{v\in\mathcal{N}_u}
+       a(\mathbf{x}_u,\mathbf{x}_v,\mathbf{e}_{uv})\,
+       \psi\!\left(\mathbf{x}_v\right)\right) \\[2pt]
+\text{Message passing:}\quad
+  \mathbf{h}_u &= \phi\!\left(\mathbf{x}_u,\ \bigoplus_{v\in\mathcal{N}_u}
+       \psi\!\left(\mathbf{x}_u,\mathbf{x}_v,\mathbf{e}_{uv}\right)\right)
+\end{align}
+%
+The \emph{convolutional} layer weights neighbours by fixed coefficients
+$c_{vu}$ (e.g.\ GCN); the \emph{attentional} layer replaces them with a learned
+scalar attention $a(\mathbf{x}_u,\mathbf{x}_v,\mathbf{e}_{uv})$ (e.g.\ GAT); and
+\emph{message passing} computes a full learnable vector message
+$\psi(\mathbf{x}_u,\mathbf{x}_v,\mathbf{e}_{uv})$ for each edge (MPNN). Moving
+down the list buys expressivity at the cost of parameters and compute -- the
+``Conventional'' continuum of the computational-modules figure.
+% Cite: \citep{Bronstein2021_geometricDL_book, Velickovic2022_messagepassing_up}.
+
+% --- Slide 68 (it looks complicated, but!) --------------------------------
+% REMIND the reader: however many layers exist, they are ALL a generic take on
+% the same template -- some function acting on the node's own information,
+% COMBINED WITH a (permutation-invariant) NEIGHBOURHOOD-AGGREGATE over some
+% function acting on the neighbouring nodes:
+%     h_u = phi( x_u,  BIGOPLUS_{v in N(u)} psi(...) ).
+% Every named layer just specialises phi, psi, and the aggregator. Strip away
+% the names and there is one idea.
+
+% --- Slide 69 (the zoo of proposed layers) --------------------------------
+% A short picture of the very large list of layers proposed in the literature.
+% CONCRETE COUNT (PyTorch Geometric, torch_geometric.nn.conv -- GNN cheatsheet,
+% v2.8.0): the main "Graph Neural Network Operators" table lists 48 convolution
+% layers; with 9 heterogeneous, 1 hypergraph, and 8 point-cloud operators that
+% is ~65 distinct propagation layers in PyG alone (and growing). [Re-check the
+% exact number against the current PyG version at write-time:
+% pytorch-geometric.readthedocs.io/en/latest/cheatsheet/gnn_cheatsheet.html]
+% EMPHASIZE (echoing the Helvetius epigraph, slide 12 -- "the knowledge of
+% certain principles easily replaces the knowledge of certain facts"): once you
+% understand the basic principles behind the common layers, it is easy to adapt
+% that understanding to ANY of these many variants. THIS is why the review
+% focuses on the foundational principles rather than cataloguing every single
+% layer.
+
+% --- Slide 70 (different prediction types) --------------------------------
+% POINT: every task you might pose on a graph can be done -- the full matrix of
+%   {node, edge, graph} level  x  {classification, regression}.
+% *** TODO FIGURE (emphasize): a TABLE of these six task types JOINED WITH a
+% cosmic-web figure, illustrated with astro examples *** --
+%   Graph-level classification: "Is this from a beyond-LambdaCDM universe?"
+%   Graph-level regression:     "What is Omega_M?"
+%   Node-level  classification: "Is the galaxy in this halo quiescent?"
+%   Node-level  regression:     "What is the stellar mass of the galaxy in this halo?"
+%   Edge-level  classification: "Are these two halos going to merge at some point?"
+%   Edge-level  regression:     "In how long will they merge?"
+% (Cosmic-web graph: nodes = halos/galaxies, edges = proximity; annotate the
+% three levels and two task types on it. Companion to the sketch-graphs and
+% computational-modules figures.)
+
+% --- Slides 71--72 (FAQ: no adjacency matrix) -----------------------------
+% PLACEMENT: although this is an FAQ in the deck, it belongs in the GRAPHS
+% section, not the GNN section. (Overall section plan: Introduction -> Graphs
+% -> Graph Neural Networks.) Draft as a subsection with one subsubsection per
+% answer:
+
+\subsection{What do I do if I do not have an adjacency matrix?}
+% INTRO: Often the adjacency matrix is handed to you by the problem (merger
+% trees, molecular bonds, detector wiring); just as often it is not, and you
+% must decide how the nodes are connected. There are four standard moves:
+
+\subsubsection{Make it up (embed a physical inductive bias)}
+% "Making up" an adjacency does not mean guessing -- it means encoding a
+% physical structure you heuristically KNOW will help, biasing the model
+% towards the correct solution. Example: in a neutrino observatory, only
+% connect detector hits whose separation is consistent with a signal
+% propagating at or below the speed of light (a causal/light-cone constraint)
+% -- edges that violate it cannot correspond to one physical signal. This is
+% the inductive-bias lever from slides 47-48, applied to connectivity.
+
+\subsubsection{Deep Sets (no edges at all)}
+% If you genuinely have only a point cloud with no meaningful relations, use a
+% Deep Set: a permutation-invariant readout rho(SUM_i phi(x_i)) (the empty-graph
+% limit). Ties to the Deep Sets / HistPool discussion
+% \citep{Hainje2025_triangle_deepsets, Cranmer2021_histpool_deepsets}.
+
+\subsubsection{Assume a fully connected graph}
+% Connect everything to everything. Maximally expressive but O(N^2) and usually
+% computationally prohibitive for large N -- this is exactly what Transformers
+% do well (a Transformer = attention on the fully-connected graph; ties to the
+% "CNN/Transformer are special-case GNNs" point, slide 22).
+
+\subsubsection{Learn it (joint with the task)}
+% Learn the adjacency / edge weights jointly with the downstream task, so the
+% graph itself is optimized for the objective. Done at scale for IceCube and
+% other neutrino telescopes -- cite the GraphNeT library v1 and v2
+% \citep{Sogaard2023_graphnet_neutrino, Orsoe2025_graphnet2_library} and the
+% NuBench benchmark \citep{Orsoe2026_nubench_benchmark}; see also the IceCube
+% Kaggle competition top-3 solutions \citep{Bukhari2023_icecube_kaggle}.
+
+% CONNECTING POINT (close the subsection with this): even when the graph
+% structure IS given, we can often MODIFY it to embed an inductive bias --
+% rewiring, pruning, adding multi-scale or causal edges, etc. So the same lever
+% that builds a graph from nothing also lets us improve a graph we were handed:
+% the adjacency matrix is a design choice, not a fixed input. (Recurring
+% domain/signal-geometry + inductive-bias thesis.)
+
+% --- Slide 73 (What layers and aggregations should I use?) ----------------
+% NOTE as the AUTHOR'S practical recommendations -- "for somebody wanting to
+% experiment, here is where to start" (opinionated, hands-on heuristics):
+%   * Layers: the best choice depends on the problem, but MessagePassing and
+%     SAGEConv are almost always a good starting point. GATs tend to be
+%     unstable to train; GCN is usually not very expressive.
+%   * Aggregations: start with sum or max -- or just concatenate several
+%     aggregators together.
+% Frame explicitly as starting recommendations, not hard rules.
+
+% --- Slide 74 (When should I consider NOT using a GNN?) [IMPORTANT] --------
+% The deck's list: (1) one-dimensional sequences, (2) images / things already
+% on grids, (3) very big datasets of very large graphs. With modifications and
+% additions:
+%
+%   (1) REGULAR one-dimensional sequences only. The caveat matters: only
+%       REGULAR, evenly-sampled 1D sequences have many more optimized
+%       alternatives (RNNs/temporal CNNs/transformers) -- though you can of
+%       course still use a GNN. The great COUNTER-EXAMPLE is IRREGULAR 1D
+%       sequences: Iqbal et al. 2025 \citep{Iqbal2025_cluster_xray_GNN} must
+%       process one-dimensional IRREGULAR sequences of VARYING LENGTH whose
+%       steps are differently sized -- radial X-ray ICM profiles sampled in
+%       different apertures set by different signal-to-noise requirements. A GNN
+%       naturally ingests variable-length, variable-resolution sequences, so
+%       here it is exactly the right tool. Lesson: it is REGULARITY, not
+%       one-dimensionality, that argues against a GNN.
+%   (2) Images / data already living on regular grids -- a CNN already encodes
+%       the grid's translation structure; a GNN would throw that away.
+%   (3) Very big datasets of very large graphs -- scale/cost can be
+%       prohibitive (cf. the Sampling module).
+%   (4) [ADD] When a VERY DEEP network is required (rare in scientific
+%       applications). Here the issue to DISCUSS is OVERSMOOTHING: stacking many
+%       message-passing layers drives node representations toward a common value
+%       (neighbourhoods increasingly overlap), washing out the distinctions the
+%       task needs. Mitigations to mention: residual/skip connections (DeepGCN),
+%       normalization, jumping-knowledge, or simply keeping the network shallow.
+%   (5) [ADD] The generic cost: GNNs are NOT very computationally efficient.
+%       This is the flip side of their generality -- by making FEW assumptions
+%       about the structure of the domain or signal, they forgo the
+%       optimizations that structure would allow (e.g. a CNN's regular-grid
+%       convolution). Fewer assumptions buy flexibility at the price of
+%       efficiency -- the direct corollary of the domain/signal-geometry thesis:
+%       if your data really do have more structure, a more specialized (and
+%       cheaper) model may be preferable.
+
+% --- TUTORIALS section (place toward the END of the review) ---------------
+% Draft a \section{Tutorials} near the end. Lead with the author's own
+% hands-on materials from this lecture, then point to the best external
+% resources.
+%
+% PRIMARY (this lecture's materials):
+%   * Hands-on GNN tutorial:  https://tinyurl.com/GNN1tutorial
+%   * GNN competition (galaxy-environment connection problem):
+%                             https://tinyurl.com/GNNcompetition
+%
+% RECOMMENDED EXTERNAL TUTORIALS / RESOURCES (Claude-suggested; verify links
+% live at write-time):
+%   * Distill.pub, "A Gentle Introduction to Graph Neural Networks"
+%     (Sanchez-Lengeling, Reif, Pearce & Wiltschko, 2021) -- interactive;
+%     https://distill.pub/2021/gnn-intro/
+%   * Distill.pub, "Understanding Convolutions on Graphs"
+%     (Daigavane, Ravindran & Aggarwal, 2021) --
+%     https://distill.pub/2021/understanding-gnns/
+%   * Stanford CS224W, "Machine Learning with Graphs" (Leskovec) -- full
+%     lecture course + Colab notebooks; https://web.stanford.edu/class/cs224w/
+%   * Geometric Deep Learning proto-book + lecture course (Bronstein, Bruna,
+%     Cohen & Velickovic, 2021) -- https://geometricdeeplearning.com/
+%     [already in bib as \citep{Bronstein2021_geometricDL_book}].
+%   * PyTorch Geometric official tutorials / Colabs --
+%     https://pytorch-geometric.readthedocs.io/
+%   * W. L. Hamilton, "Graph Representation Learning Book" (2020), free online
+%     -- https://www.cs.mcgill.ca/~wlh/grl_book/
+%   * Deep Graph Library (DGL) tutorials -- https://www.dgl.ai/
+%   * Open Graph Benchmark (OGB) -- datasets & leaderboards;
+%     https://ogb.stanford.edu/
+% (Can promote any of these to proper bib entries on request -- e.g. the two
+% Distill articles and the Hamilton GRL book.)
+
+% --- Slide 83 (The future of GNNs in astrophysics) [OUTLOOK section] ------
+% Material for the review's Outlook / Future-directions section. Five avenues:
+%   (1) Anything requiring going BEYOND POINT-WISE STATISTICS -- galaxies,
+%       cosmology, dynamics, instrumentation. (Relations carry information that
+%       per-object statistics miss.)
+%   (2) Anything requiring NON-EUCLIDEAN GEOMETRY -- cosmology, gravitational
+%       lensing, plasma physics, manifold learning.
+%   (3) GENERATIVE graph networks -- a hard task, still largely unproven in
+%       astro. Early astro efforts to cite: merger-tree / assembly generation
+%       \citep{Nguyen2024_FLORAH_assembly, Nguyen2025_mergertree_generative},
+%       equivariant graph normalizing flows for merger reconstruction
+%       \citep{Tang2022_merger_normalizingflow}, score matching on large
+%       geometric graphs \citep{Onutu2025_scorematching_cosmology}, and graph
+%       flows for void finding \citep{Thiele2026_void_graphflow}.
+%   (4) BAYESIAN reasoning for galaxy evolution -- uncertainty-aware GNNs; cf.
+%       Bayesian GNNs for lensing \citep{Park2023_lensing_bayesianGNN} and
+%       AI mass estimates with uncertainties
+%       \citep{VillanuevaDomingo2023_MW_mass}.
+%   (5) COMBINATORICS of observational planning -- GNNs for resource allocation
+%       / scheduling \citep{Wang2022_spectroscopy_resourceallocation,
+%       Cranmer2021_resourceallocation_unsupervised}.
+% Use as the backbone of the closing Outlook section; each bullet is a
+% subsection seed.
+
+% =====================================================================
+% BACKUP SLIDES (84-95) -- disposition
+% =====================================================================
+% 84-85 (Relativity / Einstein eqs): -> ADDED to the geometry examples list
+%   (see slides 5-7 note).
+% 91 (Natural abstraction for physics): -> FOLDED into the natural-abstraction
+%   theme (see slide 55 note).
+% 89-90 (Translation equivariance), 94 (Must-have permutation): DROP -- exact
+%   duplicates of slides 15 and 60-62.
+
+% --- Slide 86 (Geometry in Deep Learning: domains and signals) ------------
+% Grids / Graphs / Manifolds -- the GDL "domains" taxonomy. Use to PERSPECTIVIZE
+% the review within the broader family of GEOMETRIC DEEP LEARNING (the Bronstein
+% et al. "geometry bible", \citep{Bronstein2021_geometricDL_book}): grids (CNNs),
+% graphs (GNNs), groups, geodesics & gauges / manifolds. Explicitly discuss
+% where what we cover (graphs/GNNs) sits inside this larger picture -- GNNs are
+% one province of GDL; the same blueprint (slide 21/63) specializes to each
+% domain. Good place for a short "how this review fits within GDL" paragraph +
+% the grids/graphs/manifolds figure.
+
+% --- Slide 87 (Invariances and equivariances) -- KEEP (formal definitions) -
+% The definitional backbone for the symmetry section (the expanded formal
+% defs flagged at slides 5-7): a GROUP as a set of group actions {g}; group
+% actions as TRANSFORMATIONS (rotations, stretches, translations); group
+% invariances/equivariances as foundational for all of physics. Worked example
+% drawn: SO(3) -> conservation of angular momentum (dL^2/dt = dL_theta/dt =
+% dL_phi/dt = 0) -- i.e. rotational symmetry => conserved L (Noether).
+
+% --- Slide 88 (Noether's theorem) -- KEEP -------------------------------
+% Emmy Noether + the precise statement: "If an integral I is invariant under a
+% continuous group G_rho with rho parameters, then rho linearly independent
+% combinations of the Lagrangian expressions are divergences." The formal
+% symmetry<->conservation tie. Use the quote as an epigraph for the symmetry
+% section (alongside Weyl, slide 77). Cite the theorem directly via
+% \citep{Noether1918_invariante_variationsprobleme}.
+
+% --- Slide 92 (permutation-invariant/equivariant physical quantities) KEEP -
+% Use as a concrete EXAMPLES slide for what is invariant vs equivariant under a
+% PERMUTATION (relabelling). With the explicit note: here we are permuting the
+% COORDINATE LABELLING of the nodes. The molecule example: a graph-level
+% property (e.g. total energy) is permutation-INVARIANT, while the per-node
+% atom-type readout {OH, CH, C, C} is permutation-EQUIVARIANT (it permutes with
+% the relabelling). Pair with the slide 60-62 equations and the A <-> P A P^T
+% panel.
+
+% --- Slide 93 (Locality constraints) -- KEEP (with the graph definitions) --
+% Formal neighbourhood definition: N_u = { v | (u,v) in E  OR  (v,u) in E },
+% which lets us define LOCAL functions acting on a node and its neighbourhood,
+% phi( x_u, X_{N_u} ). This is the locality inductive bias made precise -- keep
+% it with the graph/GNN definitions (it underpins message passing, slide 53).
+
+% --- APPENDIX (instructive symmetry-derivations) -------------------------
+% Put the proof that CONVOLUTION <=> TRANSLATION EQUIVARIANCE in an appendix as
+% an instructive worked derivation (a linear map commutes with all shifts iff
+% it is a convolution; include the converse). Suggested COMPANION example(s)
+% for the same appendix, each deriving an architecture from a symmetry:
+%   (a) Permutation: any permutation-INVARIANT set function has the Deep Sets
+%       form rho( SUM_i phi(x_i) ), and a permutation-EQUIVARIANT linear layer
+%       has the form  a I + b (1 1^T)/n  (Zaheer et al. 2017). Mirrors the
+%       convolution proof for a different group; ties to slides 60-62, 92.
+%       \citep{Zaheer2017_deepsets}.
+%   (b) Rotation: an O(d)-INVARIANT (polynomial) function of vectors depends
+%       only on their pairwise inner products / distances (First Fundamental
+%       Theorem of invariant theory) -- recovers the slide-59 distance trick.
+%       \citep{Villar2021_scalars_universal, BlumSmith2023_ML_invarianttheory}.
+% Recommend (a) as the primary companion (cleanest mirror of the convolution
+% case); (b) as an optional third.
+
+% --- Slide 95 -> draft subsection (succinct) -----------------------------
+\subsection{Reading the astro-GNN literature}
+A short field guide. When reading an astrophysical GNN paper, look for two
+things: \emph{(i)} a direct line of reasoning connecting the problem at hand to
+the architecture, geometry, and inductive biases it invokes -- the graph and
+its symmetries should be motivated by the physics, not adopted by fashion; and
+\emph{(ii)} a \emph{significant} gain in performance or interpretability over
+simpler baselines that justifies the added machinery. Be wary of two red flags:
+claimed invariances or equivariances that the model does not actually possess,
+and GNNs applied where a more specialized method would be more efficient (data
+on regular grids or regular sequences -- images, evenly-sampled time series and
+the like). In short: the graph should earn its place.
+% (Drop-in box / subsection for the discussion; cf. the "when NOT to use a GNN"
+% material, slide 74, and \citep{BechlerSpeicher2023_graph_overuse} for the
+% false-inductive-bias failure mode.)

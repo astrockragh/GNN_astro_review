@@ -1,1 +1,148 @@
 Things I want to highlight/especially like from the Zhou et al. Review.
+
+% =====================================================================
+% PASS 1 -- YELLOW highlights + comments (synthesised 2026-05-30)
+% Source: annotated_former_reviews/ZhouGNNreview.pdf
+% (Highlights were flattened pen-strokes; text recovered + figure/comments
+%  read from the rendered pages. Yellow on pp. 1,2,4,5,13; a little red p.1.)
+% =====================================================================
+
+\subsection*{Yellow highlights (text)}
+
+% --- p.1: why graphs, and the historical lineage ---
+\begin{itemize}
+    \item Graphs carry ``\emph{rich relation information among elements}'';
+        flagged tasks: ``\emph{predicting protein interface, and classifying
+        diseases}.'' Good ready-made examples of relational payoff.
+    \item ``\emph{reasoning on [graph-]extracted structures [is] an important
+        research topic}'' -- framing line.
+    \item The deep-roots citations: ``\emph{(Sperduti and Starita, 1997;
+        Frasconi et al., 1998)}'' and ``\emph{(Scarselli et al., 2009) and
+        (Micheli, 2009)}.'' Worth keeping for our historical paragraph -- GNNs
+        are older than the recent hype suggests.
+    \item \textbf{Red marks (p.1):} GCN, GAT, GRN -- the three core variant
+        families singled out.
+\end{itemize}
+
+% --- p.2: the survey landscape + the design-pipeline framing ---
+\begin{itemize}
+    \item ``\emph{geometric deep learning}'' -- the umbrella term.
+    \item Related surveys to cite: ``\emph{Huang et al. (2020) review over
+        existing GNN models for dynamic graphs}'' and methods for combinatorial
+        [optimization]; ``\emph{Bronstein et al. (2017) provide a thorough
+        review of geometric learning, which presents its problems, difficulties,
+        solutions, applications}.''
+    \item The organizing idea I like: ``\emph{We present a general design
+        pipeline}'' \ldots ``\emph{to illustrate the design process of GNN for a
+        specific task}.'' A design-pipeline spine is a strong way to structure
+        our own methods section.
+\end{itemize}
+
+% --- p.4 / p.13: module decomposition + applications ---
+\begin{itemize}
+    \item The module decomposition: ``\emph{Propagation Module}'' and
+        ``\emph{Pooling Module}'' (over ``\emph{subgraphs or graphs}'').
+    \item Applications worth echoing: ``\emph{In the academic knowledge graph,
+        the graph structure is explicit}''; and in ``\emph{recommendation
+        systems, users, items and reviews can be regarded}'' as a graph.
+\end{itemize}
+
+\subsection*{Figure 3 -- the computational-modules taxonomy (p.5)}
+
+\textbf{Comment (top of figure, with an arrow to it):} ``\emph{This would be
+nice to have somewhere, with\ldots}'' -- i.e.\ build an adapted version of this
+overview/taxonomy figure for our review (Propagation / Sampling / Pooling
+modules, with representative architectures hanging off each branch).
+
+\textbf{Architectures highlighted (the canonical ones to feature):}
+\begin{itemize}
+    \item Propagation: \textbf{GCN} (spectral), \textbf{GraphSAGE} (spatial,
+        basic), \textbf{GAT} (spatial, attentional), \textbf{GNN} (the original
+        Scarselli recurrent/convergence model -- underlined), \textbf{DeepGCN}
+        (skip connections).
+    \item Sampling: \textbf{GraphSAGE} (node), \textbf{FastGCN} (layer),
+        \textbf{ClusterGCN} (subgraph).
+    \item Pooling: \textbf{Simple Pooling} (direct), \textbf{Coarsening},
+        \textbf{EigenPooling} (hierarchical).
+\end{itemize}
+
+\textbf{Crossed out, with a ``?'' (skeptical):} the \emph{Framework} sub-branch
+(MoNet) and the \emph{Gate} sub-branch (GGNN). Read as: not convinced these
+deserve to be top-level categories in our retelling -- revisit before reusing
+the taxonomy.
+
+\textbf{``$\leftarrow$ What's this'' (pointing at the GN block):} need to pin
+down / explain the \emph{Graph Network} (GN) formalism (Battaglia et al., 2018)
+-- the general framework that subsumes message passing.
+
+\textbf{Pooling/aggregation note (beside the Pooling module):} ``\emph{min,
+max, mean, var, anything that could be statistically meaningful) + Miles
+HistPool}.'' Idea: when we discuss permutation-invariant pooling/aggregation,
+frame the aggregator as \emph{any} statistically meaningful summary of the
+neighbourhood (moments: min/max/mean/variance, \ldots), and cite Miles'
+histogram pooling (``HistPool'', \citep{Cranmer2021_histpool_deepsets}) as the richer,
+distribution-aware option -- and note its astro pedigree (cosmic voids /
+cosmological parameter inference), which makes it a natural fit for our review.
+
+% =====================================================================
+% ASTRO-SUBSET FIGURE (figures/computational_modules.py) -- leaf mapping
+% and citation reminders, decided 2026-05-30.
+% =====================================================================
+
+\subsection*{Astro-subset taxonomy figure -- leaf $\to$ reference}
+
+\textbf{Propagation module} -- grouped into \emph{Conventional} (convolution /
+attention / message passing, drawn as a continuum with a low$\to$high
+``expressiveness \& compute cost'' arrow) and \emph{Sparsely used} (recurrent /
+multiscale-topological). Spectral vs spatial shown as leaf sub-labels:
+\begin{itemize}
+    \item Convolution / Spectral -- \textbf{GCN}: \citep{Soldin2025_IceCube_GCN}
+        IceCube Northern-Tracks GCN (Soldin+ 2025).
+    \item Convolution / Spatial -- \textbf{GraphSAGE}: Mangrove
+        \citep{Jespersen2022_mangrove} (Jespersen+ 2022).
+    \item Attention -- \textbf{GAT}: \citep{Spina2025_chemicaltagging_GAT} (Spina+ 2025,
+        ``Deep chemical tagging'') -- graph attention auto-encoder over stellar
+        chemical abundances (APOGEE), edges from orbital/age similarity.
+    \item Message passing -- \textbf{Full message passing}:
+        \citep{Chuang2024_mergertree_GNN} (Chuang et al.\ 2024, ``Leaving No Branches
+        Behind'' -- baryonic properties from merger trees).
+    \item Recurrent -- \textbf{GraphRNN}: astro use
+        \citep{Nguyen2025_mergertree_generative} (Nguyen+ 2025, merger-tree generation);
+        \textbf{method origin to cite: \citep{You2018_graphrnn_generative}} (You+ 2018).
+    \item Multiscale / Topological (renamed from ``skip connection''):
+        multi-scale GNN \citep{Lino2021_multiscale_continuum} (Lino+ 2021) and
+        topological DL \citep{Lee2025_topological_cosmology} (Lee \& Villaescusa-Navarro
+        2025). Pure-physics alternative: GNS \citep{SanchezGonzalez2020_GNS_physics}.
+\end{itemize}
+
+\textbf{Sampling module:}
+\begin{itemize}
+    \item Node -- \textbf{GraphSAGE}: generic note (inductive node sampling at
+        web/social-network scale, e.g.\ Pinterest's PinSAGE / Twitter-scale
+        graphs); method origin \citep{Hamilton2017_GraphSAGE_inductive} (Hamilton+ 2017).
+    \item Layer -- \textbf{FastGCN}: generic note (layer-wise sampling to bound
+        cost on very large graphs).
+    \item Subgraph -- \textbf{ClusterGCN}:
+        \citep{Wu2024_galaxyhalo_environment} (Wu+ 2024 use this sampling).
+\end{itemize}
+
+\textbf{Pooling module:}
+\begin{itemize}
+    \item Direct -- \textbf{Simple pooling} (sum / mean / max):
+        \citep{VillanuevaDomingo2022_cosmicgraph_clustering} (Villanueva-Domingo \&
+        Villaescusa-Navarro 2022).
+    \item Hierarchical -- \textbf{Coarsening}: cite the highly-cited general
+        operator \textbf{DiffPool \citep{Ying2018_diffpool_pooling}} (Ying+ 2018,
+        \url{https://arxiv.org/abs/1806.08804}) -- \emph{remember to cite};
+        alternative MinCutPool (Bianchi+ 2020).
+    \item Hierarchical -- \textbf{HistPool}: \citep{Cranmer2021_histpool_deepsets}
+        (Cranmer+ 2021). [EigenPooling dropped.]
+\end{itemize}
+
+\textbf{Dynamic / Temporal module} (fourth top-level module, decided
+2026-05-30): split by \emph{static graph} (fixed topology -- the case assumed by the
+\emph{majority of papers}) vs \emph{changing graph} (evolving topology -- leaf ``Temporal GNN'',
+graph-generative merger-tree assembly, \citep{Nguyen2025_mergertree_generative},
+Nguyen et al. 2025). Note the deliberate link
+to the Recurrent/GraphRNN branch: merger trees are both recurrent \emph{and}
+the canonical astro example of a changing graph.

@@ -6,16 +6,20 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{color}
+\usepackage{colortbl}        % row colouring in tables
+\usepackage{rotating}        % sidewaystable for wide tables
+\definecolor{rowhl}{rgb}{0.95,0.92,0.84} % highlight tint (matches figures)
 \usepackage{helvet}          % selects Helvetica as sans-serif font
 \usepackage{courier}         % selects Courier as typewriter font
 \usepackage{dirtree}
-%\usepackage{type1cm}        % activate if the above 3 fonts are 
+%\usepackage{type1cm}        % activate if the above 3 fonts are
                              % not available on your system
 
 \usepackage{makeidx}        % allows index generation
 \usepackage{graphicx}        % standard LaTeX graphics tool
                                             % when including figure files
 \usepackage{subfig}
+\usepackage{array}           % \arraybackslash for p{} columns in the table
 
 \usepackage{multicol}        % used for the two-column index
 \usepackage[bottom]{footmisc}% places footnotes at page bottom
@@ -37,291 +41,752 @@
 
 
 
-\title{Graph Neural Networks for Astrophysics and Cosmology}
+\title{Machine Learning Techniques for Astrophysics and Cosmology: Graph Neural Networks}
 % Use \titlerunning{Short Title} for an abbreviated version of
 % your contribution title if the original one is too long
+\titlerunning{Graph Neural Networks}
 \author{Christian Kragh Jespersen}
-% Use \authorrunning{Short Title} for an abbreviated version of
-% your contribution title if the original one is too long
-\institute{First Author (\Letter) \at Department of Astrophysical Sciences, Princeton University, \email{ckragh@princeton.edu}}
-%
-% Use the package "url.sty" to avoid
-% problems with special characters
-% used in your e-mail or web address
-%
+\authorrunning{C. Kragh Jespersen}
+\institute{Christian Kragh Jespersen (\Letter) \at Department of Astrophysical Sciences, Princeton University, Princeton, NJ 08544, USA, \email{ckragh@princeton.edu}}
 \maketitle
 
-\abstract{Each chapter should be preceded by an abstract (about 250 words) that summarizes the content. The abstract will not appear at the beginning of the chapter in the hard copy of the book. The abstract will appear only \textit{online} at \url{www.SpringerLink.com} and be available with unrestricted access. This allows unregistered users to read the abstract as a teaser for the complete chapter.}
-
-
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
-
-
-\section{Section Heading}
-\label{sec:1}
-
-Use the template \emph{chapter.tex} together with the Springer document class svmult to style the various elements of your chapter content in the Springer layout. However, authors should not worry too much about the exact style, as this can be fixed by the Editorial Office in the preparation of the proof.
-
-
-
-\subsection*{Key-points to have in mind}
-
-
-\subsubsection*{Figures}
-
-Colored figures are welcome in any standard format (jpg, tif, ppt, gif). If possible please provide the original figure in high resolution (300 dpi minimum). {\color{red}\bf Please do not forget to obtain permission in case the figure is from a published article}. For journals like ApJ, PRD, PRL, etc. you do not need the permission if you are an author of the article of the original figures, but for most journals you need the permission even if you are the author of those figures.
-
-
-
-\subsubsection*{Submission}
-
-Please submit source files, compiled pdf file of the chapter, and figure permissions to the editors of your book.
-
-\vspace{0.3cm}
-
-\textcolor{red}{\bf Author submission deadline: {\it [Submission Deadline]}}
-
-
-
-\subsubsection*{arXiv Policy}
-
-Authors can post their chapter on arXiv if they wish to do it. There is no embargo for the {\it submitted} version of the manuscript, while there is an embargo of 12~months from publication for the {\it accepted} version. In the case of a chapter of a book, authors can post on arXiv -- at any time -- the submitted version, which often corresponds to, or it is very close to, the accepted version because editors are supposed to invite experts on the topic of every chapter. In the comment field on arXiv, please write something like ``Invited chapter for the edited book {\it [Title of the book]} (Eds. {\it [Names of the Editors]}, Springer Singapore, expected in {\it [expected year of publication]})''. After the publication of the chapter, you may add the DOI on the arXiv page.
-
-
-
+\abstract{Modern astrophysics drowns not in data, but in relations. We seldom
+measure an object alone; we measure how it sits among its neighbours --- a
+galaxy in its environment, a halo in its history, a photon hit in a detector.
+Graphs encode exactly these relations, and graph neural networks (GNNs) are the
+learning algorithms built to respect them. This chapter argues, from first
+principles, that GNNs are the natural instrument for physical data: they adapt
+to the native geometry of the domain and the signal, they embed the symmetries
+and the prior knowledge we already trust, and they stay flexible enough to fit
+what we do not yet understand. We start from the geometry of learning, recover
+the convolutional network and the transformer as special cases of a single
+geometric blueprint, and then build the graph and the graph neural network from
+the ground up. We survey applications across cosmology, galaxy formation,
+dynamics, and instrumentation; we distil a set of best practices, including the
+unfashionable question of when \emph{not} to reach for a graph; and we chart the
+frontier. Throughout we prefer physical intuition to abstract machinery, on the
+old conviction --- due to Helv\'etius --- that the knowledge of certain
+principles readily supplies the knowledge of certain facts.}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+\section{Introduction}
+\label{sec:intro}
+
+The history of physics is a story of geometry. Learning algorithms for the
+physical world must therefore be grounded in geometry.\footnote{Graph theory
+itself was born of a geometric puzzle: in 1736 Euler reduced the seven bridges
+of K\"onigsberg to nodes and edges and proved the stroll impossible. Three
+centuries on, the same abstraction describes the largest structures in the
+Universe.} From the ellipses of Kepler, through the invariances of Galileo, to
+the curved spacetime of Einstein, physics advances less by collecting facts than
+by finding the symmetry that renders the facts inevitable. A theory earns our
+trust when it states its laws in a form that no choice of coordinates, no
+relabelling, and no idle rotation can disturb.
+
+The natural sciences are, at heart, relational. We build theories not of
+isolated objects but of the relations between them, and graphs hold precisely
+this structure: objects become nodes, relations become edges. Such data
+permeate the field. Merger trees record the assembly of a halo; the cosmic web
+threads galaxies into filaments; a neutrino observatory scatters its sensors
+through a kilometre of ice. None of these live on a regular grid, and forcing
+them onto one invents a structure the data never had.
+
+Graph neural networks belong to the modern family of \emph{geometric} deep
+learning architectures, which harness relational inductive biases for functions
+on arbitrary domains \citep{Bronstein2021_geometricDL_book}. They propagate
+information along edges through parameterised message passing, and read out
+node-, edge-, and graph-level quantities. The idea is older than the recent
+enthusiasm suggests: recursive and recurrent precursors reach back to the late
+1990s, and the message-passing view that organises this chapter has by now
+absorbed convolutional networks and transformers as special cases
+\citep{Velickovic2022_messagepassing_up}.
+
+This chapter proceeds in three movements. We first develop the geometry of
+learning and the blueprint that unifies its architectures
+(Sect.~\ref{sec:geometry}). We then construct graphs and graph neural networks
+from the ground up (Sects.~\ref{sec:graphs}--\ref{sec:gnn}). Finally we review
+the astrophysical applications (Sect.~\ref{sec:applications}), set out best
+practices (Sect.~\ref{sec:bestpractices}), and survey the frontier
+(Sect.~\ref{sec:frontier}).
 
 
-
-\section{Section Heading}
-\label{sec:2}
-
-We recommend to use the \verb|eqnarray| environment to typeset your equations, e.g.
-\begin{eqnarray}
-a \times b = c \nonumber\\
-\vec{a} \cdot \vec{b}=\vec{c}
-\label{eq:01}
-\end{eqnarray}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+\section{Geometry and Deep Learning}
+\label{sec:geometry}
 
-\subsection{Subsection Heading}
-\label{subsec:2}
+\begin{quotation}
+\noindent\textit{``La connaissance de certains principes supplée facilement à
+la connaissance de certains faits.''} \\
+\noindent (``The knowledge of certain principles readily supplies the knowledge
+of certain facts.'') \\
+\noindent\hfill --- Claude Adrien Helv\'etius
+\end{quotation}
 
-This is a subsection.
+This section makes a promise in Helv\'etius's spirit: master a few principles,
+and you can \emph{derive} --- rather than memorise --- the right architecture
+for the problem in front of you. The recipe takes three inputs --- the problem
+you pose, the signal you measure, and the domain on which it lives --- and
+returns the symmetries to respect and the layers to stack. We separate the
+geometry of the domain from that of the signal, fix the language of symmetry,
+and then assemble the blueprint from which the convolutional network, the
+transformer, and the graph neural network all descend.
 
+\subsection{The geometry of the domain and of the signal}
+\label{sec:domain-signal}
 
+A learning problem hides two geometries, and good models respect both. The
+first is the geometry of the \emph{domain} --- the support on which the data
+live: a regular grid, a sphere, an irregular point cloud, a graph. The second is
+the geometry of the \emph{signal} --- the structure of the field defined on that
+support, which carries its own symmetries (a temperature is a scalar, a velocity
+a vector, a shear a tensor, whatever grid we happen to sample them on).
 
-\subsubsection{Subsubsection Heading}
+The lesson repeats throughout this chapter, so we state it once and plainly:
+choose the algorithm that respects the native geometry of both the domain and
+the signal. Impose no symmetry the data lack, and discard none they possess. A
+convolutional network presumes a regular grid; run it on a sphere or an
+irregular detector and one must first voxelise, and so invent a translational
+structure that is simply not there. Where the domain is genuinely irregular, a
+graph is not a stylistic preference but the only faithful description.
 
-This is a subsubsection.
-
-
-
-% For figures use
-%
-\begin{figure}[b]
-\sidecaption
-% Use the relevant command for your figure-insertion program
-% to insert the figure file.
-% For example, with the graphicx style use
-\includegraphics[scale=.95]{figure}
-%
-% If no graphics program available, insert a blank space i.e. use
-%\picplace{5cm}{2cm} % Give the correct figure height and width in cm
-%
-\caption{If the width of the figure is less than 7.8 cm use the \texttt{sidecapion} command to flush the caption on the left side of the page. If the figure is positioned at the top of the page, align the sidecaption with the top of the figure -- to achieve this you simply need to use the optional argument \texttt{[t]} with the \texttt{sidecaption} command}
-\label{fig:1}       % Give a unique label
+% TODO: create this figure
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figures/TODO_domain_signal_geometry}% TODO: make own figure
+\caption{TODO --- MAKE OWN VERSION. The two geometries of a learning problem:
+the \emph{domain} (grid vs.\ sphere vs.\ point cloud vs.\ graph) and the
+\emph{signal} living on it (scalar, vector, tensor field), with the algorithm
+each admits.}
+\label{fig:domain_signal}
 \end{figure}
 
+\subsection{Symmetries, invariances, and equivariances}
+\label{sec:symmetries}
 
+A \emph{symmetry} is a transformation that leaves some property untouched. The
+physicist meets symmetries early: the result of an experiment does not depend on
+where the bench stands, which way it faces, or when one runs it. The
+transformations that preserve a structure form a \emph{group}, and how that
+group acts on our data --- through linear maps called \emph{representations} ---
+dictates how a sensible model must behave. We keep the formal account, with the
+group axioms and the representation theory, to Appendix~\ref{app:symmetries};
+here we need only two words.
 
-For typesetting numbered lists we recommend to use the \verb|enumerate| environment -- it will automatically render Springer's preferred layout.
+A function is \emph{invariant} when the group action leaves its output
+unchanged, and \emph{equivariant} when the output transforms in step with the
+input. The distinction is the difference between a scalar and a vector. Rotate a
+molecule: its total energy does not move (invariant), but the force on each atom
+rotates with it (equivariant). The same split organises every prediction we make
+on a graph, and we return to it in Sect.~\ref{sec:gnn}. Invariance, it is worth
+noting, is simply the special case of equivariance in which the output carries
+the trivial representation.
 
-\begin{enumerate}
-\item{Livelihood and survival mobility are oftentimes coutcomes of uneven socioeconomic development.}
-\begin{enumerate}
-\item{Livelihood and survival mobility are oftentimes coutcomes of uneven socioeconomic development.}
-\item{Livelihood and survival mobility are oftentimes coutcomes of uneven socioeconomic development.}
-\end{enumerate}
-\item{Livelihood and survival mobility are oftentimes coutcomes of uneven socioeconomic development.}
-\end{enumerate}
+\subsection{The geometric blueprint, and the convolutional network it implies}
+\label{sec:blueprint}
 
+Almost every successful architecture is one recipe, applied to a different
+domain and symmetry. Fix a domain $\Omega$ with symmetry group $G$ and assemble
+four kinds of block, as set out in the blueprint of
+\citet{Bronstein2021_geometricDL_book}.
 
-
-For unnumbered list we recommend to use the \verb|itemize| environment -- it will automatically render Springer's preferred layout.
-
+\begin{svgraybox}
+\textbf{The Geometric Deep Learning blueprint.} From a domain $\Omega$ with
+symmetry group $G$, build:
 \begin{itemize}
-\item{Livelihood and survival mobility are oftentimes coutcomes of uneven socioeconomic development, cf. Table~\ref{tab:1}.}
-\begin{itemize}
-\item{Livelihood and survival mobility are oftentimes coutcomes of uneven socioeconomic development.}
-\item{Livelihood and survival mobility are oftentimes coutcomes of uneven socioeconomic development.}
+  \item a \textbf{$G$-equivariant layer} $B$, which mixes features in step with
+        the symmetry, $B(g.x)=g.B(x)$;
+  \item a pointwise \textbf{non-linearity} $\sigma$;
+  \item an optional \textbf{local pooling (coarsening)} $P$, which shrinks the
+        domain while it preserves the symmetry;
+  \item a \textbf{global pooling} $A$, which reads out a $G$-\emph{invariant}
+        answer, $A(g.x)=A(x)$.
 \end{itemize}
-\item{Livelihood and survival mobility are oftentimes coutcomes of uneven socioeconomic development.}
-\end{itemize}
+Stack the equivariant blocks (with non-linearities and optional coarsening) and
+finish with the invariant readout:
+\[
+  f \;=\; A \circ \sigma_J \circ B_J \circ P_{J-1}\circ\cdots\circ
+          P_1 \circ \sigma_1 \circ B_1 .
+\]
+\end{svgraybox}
 
+To see the recipe at work, derive the convolutional network. Since many readers
+hold a firm intuition for images and a shakier one for graphs, we let the
+familiar case lead. Demand three things \emph{a priori} of a model that acts on
+an image: translational \emph{equivariance} of its internal operations, scale
+separation, and translational \emph{invariance} of its output. The first
+requirement is decisive. To insist that a local linear operation commute with
+every shift forces it to share its weights across the image --- that is, to be a
+\emph{convolution}. Scale separation, the premise that one may coarsen the signal
+without loss of what matters, justifies the interleaved \emph{pooling} that
+stacks these convolutions into a multiscale hierarchy; a dog stays a dog across
+scales and small deformations. Demand finally that the \emph{output} ignore
+position, and a single \emph{global pooling} delivers it. Reassembled, the parts
+are nothing but the familiar convolutional network --- and exactly the blueprint
+above, with the group set to translations.
 
+The same recipe, with a different group and a different notion of locality, then
+yields the rest. A transformer is the blueprint on a fully connected graph with
+attention as a learned, soft adjacency; a deep set is the blueprint on a set,
+the edgeless limit; a graph neural network is the blueprint on a graph with the
+permutation group. We do not claim that a transformer simply \emph{is} a graph
+neural network --- its positional encodings reinstate the order a
+permutation-equivariant layer discards, and the difference matters --- only that
+all of them descend from one geometric principle. The graph earns its central
+place here not because it is fashionable, but because it is the humble, general
+substrate from which the specialised successes fall out as corollaries.
 
-\begin{table}
-\caption{Please write your table caption here}
-\label{tab:1}       % Give a unique label
-\begin{tabular}{p{2cm}p{2.4cm}p{2cm}p{4.9cm}}
+\subsection{Where graph neural networks sit: the five Gs}
+\label{sec:5gs}
+
+Geometric deep learning surveys five families of domain --- grids, groups,
+graphs, geodesics, and gauges, the ``five Gs''
+\citep{Bronstein2021_geometricDL_book} --- and graphs are but one province of
+that map. We mention the others only to place our subject within it; the same
+blueprint specialises to each. Table~\ref{tab:gdl_architectures} collects the
+common architectures as instances of the blueprint, and marks the one this
+chapter pursues.
+
+\begin{table}[t]
+\caption{Common geometric architectures as instances of the geometric deep
+learning blueprint, after \citet{Bronstein2021_geometricDL_book} (trimmed). The
+GNN row --- the focus of this chapter --- is highlighted.}
+\label{tab:gdl_architectures}
+\centering\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lll>{\raggedright\arraybackslash}p{2.2cm}>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{2.8cm}}
 \hline\noalign{\smallskip}
-Classes & Subclass & Length & Action Mechanism  \\
+Architecture & Domain $\Omega$ & Symmetry $G$ & Locality & Example (non-astro) & Example (astronomy) \\
 \noalign{\smallskip}\svhline\noalign{\smallskip}
-Translation & mRNA$^a$  & 22 (19--25) & Translation repression, mRNA cleavage\\
-Translation & mRNA cleavage & 21 & mRNA cleavage\\
-Translation & mRNA  & 21--22 & mRNA cleavage\\
-Translation & mRNA  & 24--26 & Histone and DNA Modification\\
-\noalign{\smallskip}\hline\noalign{\smallskip}
+CNN           & Grid           & Translation            & local patch & image classification \citep{Krizhevsky2012_alexnet_imagenet} & galaxy morphology \citep{Dieleman2015_galaxymorphology_CNN} \\
+Spherical CNN & Sphere         & Rotation $SO(3)$       & local cap   & omnidirectional vision \citep{Cohen2018_spherical_CNN} & weak-lensing maps \citep{Perraudin2019_deepsphere_spherical} \\
+\rowcolor{rowhl}
+GNN           & Graph          & Permutation $\Sigma_n$ & neighbours  & molecular properties \citep{Gilmer2017_MPNN_quantumchemistry} & merger trees \citep{Jespersen2022_mangrove} \\
+Deep Sets     & Set            & Permutation $\Sigma_n$ & none        & point clouds \citep{Zaheer2017_deepsets} & cosmic voids \citep{Cranmer2021_histpool_deepsets} \\
+Transformer   & Complete graph & Permutation $\Sigma_n$ & all-to-all  & language \citep{Vaswani2017_transformer_attention} & light curves \citep{DonosoOliva2023_astromer_transformer} \\
+\noalign{\smallskip}\hline
 \end{tabular}
-$^a$ Table foot note (with superscript)
 \end{table}
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+\section{Graphs}
+\label{sec:graphs}
+
+Before we learn on a graph, we must say what a graph is, how we build one, and
+when we have no choice but to use one. This section takes the three in turn: it
+fixes the notation, it treats the adjacency matrix as the design choice it
+really is, and it shows the astrophysical settings in which the graph is simply
+inevitable. One point deserves emphasis at the outset: the graph picture earns
+its keep even when no neural network touches it. A graph path-likelihood, for
+instance, extracts galaxy-formation information from the structure of a layered
+halo graph alone, with not a single learned weight in sight
+\citep{Yang2026_halograph_likelihood_not_gnn}.
+
+\subsection{Definitions and notation}
+\label{sec:graph-defs}
+
+We define a graph as the triple $G=(V,E,U)$. Here $V=\{\mathbf{v}_i\}_{i=1:N^v}$
+is the set of node feature vectors; $E=\{(\mathbf{e}_k,r_k,s_k)\}$ is the set of
+edge feature vectors, each tied to a receiver $r_k$ and a sender $s_k$; and $U$
+is a global, graph-level feature vector. We follow the notation of
+\citet{Battaglia2018_relational_GN}. The connectivity also admits a compact
+description through the binary adjacency matrix $A$, where $A_{ij}=1$ marks an
+edge. Real graphs are sparse, so in practice one stores not the dense $N\times
+N$ matrix but the \emph{edge index} --- the two rows of sender and receiver
+indices --- which is how message passing is actually computed.
+
+A graph may be directed or undirected, and the physics of the relation should
+decide which. Directed edges suit asymmetric, causal, or ordered relations: a
+merger tree points forward in time, since to pass information backwards would
+break causality. Undirected edges (a symmetric $A$) suit symmetric relations ---
+spatial proximity, a chemical bond, a pairwise gravitational pull. The
+\emph{neighbourhood} $\mathcal{N}(u)$ collects the nodes joined to $u$, and on it
+rests the whole notion of locality that follows.
+
+% TODO: create this figure
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figures/TODO_sketch_graphs_adjacency}% TODO: make own figure
+\caption{TODO --- MAKE OWN VERSION (companion script to
+\texttt{figures/computational\_modules.py}). A few sketch graphs --- a star, a
+cycle, a complete graph --- with their dense adjacency matrices and the
+equivalent sparse sender/receiver edge index.}
+\label{fig:sketch_graphs}
+\end{figure}
+
+\subsection{Building the graph: the adjacency is a choice}
+\label{sec:no-adjacency}
+
+Often the graph arrives ready-made; just as often it does not, and we must
+decide who connects to whom. There are four standard moves. We may \emph{impose}
+an edge set from physical knowledge --- at a neutrino observatory, connect only
+hits whose separation is consistent with a signal at or below the speed of light,
+a causal constraint no honest edge may violate. We may treat the data as a bare
+set and reach for a \emph{deep set}, the edgeless limit.\footnote{A set has no
+native sense of locality --- with no edges, no element is near any other --- so
+one cannot define a non-trivial coarsening on set structure alone. To coarsen,
+one must first infer a topology over the points, which is precisely to turn the
+set back into a graph.} We may assume a \emph{fully connected} graph, maximally
+expressive but quadratic in cost, and so the natural home of the transformer.
+Or we may \emph{learn} the adjacency jointly with the task.
+
+For physicists the first move deserves emphasis, again and again: we can often
+impose the graph from what we already know. The neutrino observatory is the
+clean illustration, since a single setting admits all four answers --- assume the
+light-cone structure, learn the wiring, treat the hits as a set, or connect
+everything --- and the literature has tried each
+\citep{Sogaard2023_graphnet_neutrino,Orsoe2025_graphnet2_library,
+Orsoe2026_nubench_benchmark,Bukhari2023_icecube_kaggle,Jespersen2022_icecube_bachelor}.
+To learn the latent structure is powerful but, absent physical priors,
+effectively intractable: the space of possible adjacencies is vast, and the
+inference couples a discrete object to every downstream gradient. The adjacency
+matrix, in short, is a design choice, not a fixed input.
+
+\subsection{Astrophysical graphs: when the structure is inevitable}
+\label{sec:inevitable}
+
+Sometimes the graph is not a choice at all. Three astrophysical cases make the
+point, mapped onto the domain, the signal, and the geometry of
+Sect.~\ref{sec:domain-signal}. The \emph{domain} is inevitable at the IceCube
+Neutrino Observatory, whose sensors hang in an irregular, two-layer hexagonal
+array through the ice; a convolutional network cannot touch it without faking a
+grid \citep{Choma2018_IceCube_classification,Abbasi2022_IceCube_lowenergy}. The
+\emph{signal} is inevitable in a dark-matter merger tree, whose branching
+assembly history is a graph by construction
+(Fig.~\ref{fig:merger_tree})\citep{Jespersen2022_mangrove,Chuang2024_mergertree_GNN}.
+The \emph{geometry} is inevitable in the cosmic web, a point cloud of halos
+whose relevant structure is the proximity graph that threads them
+(Fig.~\ref{fig:cosmic_web})\citep{Makinen2022_cosmicgraph_LSS,
+VillanuevaDomingo2022_cosmicgraph_clustering}. In each, the graph is the only
+structure that does not lie about the data.
+
+\begin{figure}[t]
+\includegraphics[width=0.7\textwidth]{figures/full_tree2}
+\caption{A dark-matter halo merger tree: the assembly history is a graph by
+construction, with nodes coloured by halo mass and edges following the flow of
+time.}
+\label{fig:merger_tree}
+\end{figure}
+
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figures/cosmic_graph1}
+\caption{The cosmic web as a proximity graph over halos: the connectivity
+\emph{is} the geometry.}
+\label{fig:cosmic_web}
+\end{figure}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+\section{Graph Neural Networks}
+\label{sec:gnn}
 
+A graph neural network rests on one idea, repeated: pass messages along the
+edges, aggregate them, update the node. Everything else is variation on that
+theme. We open with the anatomy of a single layer --- and its disguise as a
+force law --- then catalogue the common layers, the tasks they serve, and the
+modules from which any of the rest can be assembled.
 
+\subsection{The anatomy of a message-passing layer}
+\label{sec:message-passing}
 
-\section{Section Heading}
-\label{sec:3}
+A single message-passing layer does three things, and a physicist has done them
+all before. Each node gathers messages from its neighbours, a
+permutation-invariant aggregator sums them, and the node updates its state from
+its own features and from the aggregate:
+\[
+  \mathbf{h}_u \;=\; \phi\!\Big(\mathbf{x}_u,\ \bigoplus_{v\in\mathcal{N}(u)}
+        \psi(\mathbf{x}_u,\mathbf{x}_v,\mathbf{e}_{uv})\Big).
+\]
+At its simplest the layer reads $\mathbf{v}_i' = \mathbf{W}_1\mathbf{v}_i +
+\mathbf{W}_2\,\mathrm{mean}_{j\in\mathcal{N}(i)}\mathbf{v}_j$
+\citep{Hamilton2017_GraphSAGE_inductive,Jespersen2022_mangrove}. The form should
+look familiar, because it is a gravitational $N$-body update in disguise. Step
+the velocity of body $i$ forward and the contributions of all other masses
+simply superpose:
+\[
+  \mathbf{v}_i^{t+1} \;=\; \mathbf{v}_i^{t}
+    + \Delta t \sum_{j\neq i}
+      \frac{G\,m_j(\mathbf{x}_j^{t}-\mathbf{x}_i^{t})}
+           {|\mathbf{x}_j^{t}-\mathbf{x}_i^{t}|^{3}} .
+\]
+The carry-forward term plays the role of $\phi(\mathbf{x}_u,\cdot)$; the pairwise
+pull $G m_j(\mathbf{x}_j-\mathbf{x}_i)/r^3$ is the edge message $\psi$; the sum
+over bodies is the aggregator; the leading ``$+$'' is the residual update. A
+GNN layer, then, is a learnable, generalised force law plus a one-step
+integrator --- which is why message passing feels native to physicists, and why
+the learned edge function so often reads back as a physical force
+\citep{Cranmer2019_symbolicphysics_GNN,Lemos2023_orbitalmechanics_symbolic}.
 
-\begin{svgraybox}
-If you want to emphasize complete paragraphs of texts we recommend to use the newly defined Springer class option \verb|graybox| and the newly defined environment \verb|svgraybox|. This will produce a 15 percent screened box 'behind' your text.
+\subsection{Common propagation layers}
+\label{sec:flavours}
 
-If you want to emphasize complete paragraphs of texts we recommend to use the newly defined Springer class option and environment \verb|svgraybox|. This will produce a 15 percent screened box 'behind' your text.
-\end{svgraybox}
+The propagation layer comes in three canonical flavours
+\citep{Bronstein2021_geometricDL_book,Velickovic2022_messagepassing_up}, in
+order of rising expressivity --- and of rising cost. With aggregator
+$\bigoplus$ and learnable maps $\psi,\phi$:
+\begin{align}
+\text{Convolutional:}\quad
+  \mathbf{h}_u &= \phi\!\Big(\mathbf{x}_u, \textstyle\bigoplus_{v\in\mathcal{N}_u}
+       c_{vu}\,\psi(\mathbf{x}_v)\Big), \\
+\text{Attentional:}\quad
+  \mathbf{h}_u &= \phi\!\Big(\mathbf{x}_u, \textstyle\bigoplus_{v\in\mathcal{N}_u}
+       a(\mathbf{x}_u,\mathbf{x}_v)\,\psi(\mathbf{x}_v)\Big), \\
+\text{Message passing:}\quad
+  \mathbf{h}_u &= \phi\!\Big(\mathbf{x}_u, \textstyle\bigoplus_{v\in\mathcal{N}_u}
+       \psi(\mathbf{x}_u,\mathbf{x}_v,\mathbf{e}_{uv})\Big).
+\end{align}
+The convolutional layer fixes the neighbour weights $c_{vu}$ (GCN); the
+attentional layer learns a scalar weight $a(\mathbf{x}_u,\mathbf{x}_v)$ (GAT);
+message passing computes a full vector message per edge (MPNN). To descend the
+list is to buy expressivity with parameters and compute
+(Fig.~\ref{fig:flavours}).
 
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figures/bronstein_layer_overview}
+\caption{TODO --- MAKE OWN VERSION (placeholder lifted from
+\citealp{Bronstein2021_geometricDL_book}; replace before publication). Dataflow
+for the three flavours of GNN layer, on the neighbourhood of node $b$. Left to
+right: convolutional ($c_{uv}$ fixed); attentional
+($\alpha_{uv}=a(\mathbf{x}_u,\mathbf{x}_v)$); message passing
+($\mathbf{m}_{uv}=\psi(\mathbf{x}_u,\mathbf{x}_v)$).}
+\label{fig:flavours}
+\end{figure}
 
+\subsection{Prediction types}
+\label{sec:tasks}
 
-\begin{theorem}
-Theorem text goes here.
-\end{theorem}
-%
-% or
-%
-\begin{definition}
-Definition text goes here.
-\end{definition}
+A graph affords every task one might want, across three levels and two modes:
+node, edge, and graph, in classification or regression
+(Fig.~\ref{fig:tasks}). On the cosmic web alone one may ask, at the graph level,
+whether a volume comes from a universe beyond $\Lambda$CDM, or what its $\Omega_m$
+is; at the node level, whether the galaxy in a halo is quiescent, or what its
+stellar mass is; at the edge level, whether two halos will merge, and in how
+long. Node- and edge-level outputs demand permutation \emph{equivariance};
+graph-level outputs demand permutation \emph{invariance}.
 
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figures/velickovic_tasks}
+\caption{The task taxonomy: node-, edge-, and graph-level prediction (each in
+classification or regression). After \citet{Velickovic2023_everythingconnected_review}.}
+\label{fig:tasks}
+\end{figure}
 
+\subsection{Composing edge, node, and global features into one layer}
+\label{sec:compose}
 
-\begin{proof}
-Proof text goes here.
-\qed
-\end{proof}
+The three feature types --- edge, node, and global --- need not act in
+isolation; a full layer updates each in turn and lets information flow between
+them (Fig.~\ref{fig:workflow}). One updates edges from their endpoints, then
+nodes from their aggregated edges, then the global feature from the whole. This
+order is a convention, not a law, but it composes the relational, the local, and
+the global into a single, permutation-respecting operation.
 
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figures/workflow}
+\caption{How to compose edge, node, and global features into a single graph
+network layer: edges update from their endpoints, nodes from their incident
+edges, and the global feature from the whole graph.}
+\label{fig:workflow}
+\end{figure}
 
+\subsection{Pooling and readout}
+\label{sec:pooling}
 
+To turn node features into a graph-level answer, one pools. The simplest
+readouts sum, average, or take the maximum over nodes --- order-independent, and
+so permutation-invariant \citep{VillanuevaDomingo2022_cosmicgraph_clustering}.
+Richer, distribution-aware readouts exist: a differentiable histogram, for one,
+captures higher moments and stays interpretable in the language of classical set
+summaries \citep{Cranmer2021_histpool_deepsets}. Hierarchical pooling instead
+coarsens the graph in stages \citep{Ying2018_diffpool_pooling}. The aggregator
+is best read as any statistically meaningful summary of the neighbourhood ---
+minimum, maximum, mean, variance, and onwards.
+
+\subsection{Scaling up: sampling}
+\label{sec:sampling}
+
+When a graph grows to millions of nodes, one cannot pass messages over all of it
+at once. Sampling controls the cost --- by node, by layer, or by subgraph ---
+and trades exactness for tractability, the price of working at survey scale.
+
+\subsection{The computational-modules zoo}
+\label{sec:zoo}
+
+The literature offers dozens of propagation layers, samplers, and pooling
+operators; PyTorch Geometric alone lists some sixty-five. Their number need not
+intimidate. Once one grasps the few principles behind the common layers, any of
+the rest is a short step away --- the knowledge of certain principles, again,
+supplying the knowledge of certain facts. Figure~\ref{fig:modules} organises a
+useful astrophysical subset as a taxonomy of computational modules.
+
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figures/computational_modules}
+\caption{A taxonomy of GNN computational modules, restricted to an
+astrophysically useful subset, with a representative reference on each leaf.
+Adapted in the spirit of \citet{2018arXiv181208434Z}.}
+\label{fig:modules}
+\end{figure}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+\section{Applications in Astrophysics and Cosmology}
+\label{sec:applications}
 
+GNNs have spread across astrophysics wherever the data refuse a grid. We
+organise the survey by subfield, and we flag the honest divide between results
+on real data and results that so far live only in simulation. The list is
+illustrative, not exhaustive.
 
+\subsection{Cosmology and large-scale structure}
+\label{sec:app-cosmo}
+Cosmology supplies the largest graphs we have. Where the likelihood is
+intractable, a GNN reads parameters straight from the catalogue: cosmic graphs
+over halos and galaxies constrain $\Omega_m$ and the clustering amplitude
+\citep{Makinen2022_cosmicgraph_LSS, VillanuevaDomingo2022_cosmicgraph_clustering,
+Shao2023_omegam_universalequation, Yang2023_haloclustering_graph}, and
+field-level likelihood-free inference reads cosmology directly from galaxy
+positions \citep{deSanti2023_fieldlevel_LFI}. Point clouds of dark-matter halos
+yield parameters \citep{Chatterjee2025_pointcloud_cosmology}, discrete tracers
+are lifted back to continuous fields \citep{Kvasiuk2024_fieldreconstruction_GNN},
+and the cosmic web is classified by environment
+\citep{Kololgi2025_cosmicweb_classification}. Robustness across surveys and
+simulations drives domain adaptation \citep{Roncoli2023_domainadaptation_cosmology,
+Lee2024_SDSS_domaingeneralization}, while topological deep learning
+\citep{Lee2025_topological_cosmology}, graph-based CMB recovery
+\citep{Adams2023_CMB_graphconv}, Bayesian lensing inference
+\citep{Park2023_lensing_bayesianGNN}, primordial non-Gaussianity
+\citep{Jung2023_QuijotePNG_massfunction}, and cosmic-void finding with graph
+flows or differentiable histograms \citep{Thiele2026_void_graphflow,
+Cranmer2021_histpool_deepsets} fill out the field. Common benchmarks have begun
+to appear \citep{Huang2025_CosmoBench_benchmark}.
 
-\begin{acknowledgement}
-If you want to include acknowledgments of assistance and the like at the end of an individual chapter please use the \verb|acknowledgement| environment -- it will automatically render Springer's preferred layout.
-\end{acknowledgement}
+\subsection{Galaxy formation and the galaxy--halo connection}
+\label{sec:app-galaxies}
+The bond between a galaxy and its dark-matter halo is relational, and the merger
+tree makes it a graph. \texttt{Mangrove} maps merger trees onto galaxy
+properties orders of magnitude faster than a semi-analytic model
+\citep{Jespersen2022_mangrove}, and later work leaves no branch behind
+\citep{Chuang2024_mergertree_GNN}. The galaxy--environment connection is learned
+directly \citep{Wu2023_galaxyenvironment_GNN, Wu2024_galaxyhalo_environment,
+Jespersen2026_environment_assembly}, halo masses are inferred from their
+neighbourhoods \citep{VillanuevaDomingo2022_halomass_GNN,
+Larson2024_halomass_images}, and intrinsic alignments --- a vector quantity ---
+are modelled equivariantly \citep{Jagvaral2022_intrinsicalignment_GNN}. Clusters
+are weighed from 2D observables and X-ray profiles
+\citep{Delgado2025_cluster_triaxiality, Iqbal2025_cluster_xray_GNN}, and
+generative models now emulate assembly histories and subhalo populations
+\citep{Roper2020_MEGA_mergergraph, Nguyen2024_FLORAH_assembly,
+Nguyen2025_mergertree_generative, Nguyen2026_DREAMS_diffusion}.
 
+\subsection{Dynamics}
+\label{sec:app-dynamics}
+Dynamics is where the force-law analogy of Sect.~\ref{sec:message-passing}
+becomes literal. Interaction networks learn the equations of motion of $N$-body
+systems and, through symbolic regression, hand them back as readable laws
+\citep{Cranmer2019_symbolicphysics_GNN, Cranmer2020_symbolicregression_inductivebias,
+Lemos2023_orbitalmechanics_symbolic}. The same machinery predicts the stability
+of compact planetary systems \citep{Cranmer2021_planetarystability_BNN} and
+reconstructs galaxy mergers with equivariant flows
+\citep{Tang2022_merger_normalizingflow}; the broader programme of learned
+simulators \citep{SanchezGonzalez2020_GNS_physics, Pfaff2020_meshsim_GNN} waits
+to be turned loose on astrophysics in earnest.
 
+\subsection{Detectors and instrumentation}
+\label{sec:app-instruments}
+Detectors rarely sit on grids, and neutrino telescopes least of all. GNNs
+reconstruct IceCube events faster and more precisely than the classical pipeline
+\citep{Choma2018_IceCube_classification, Abbasi2022_IceCube_lowenergy,
+Soldin2025_IceCube_GCN, Jespersen2022_icecube_bachelor}, an effort now
+consolidated in the \texttt{GraphNeT} library and its benchmarks
+\citep{Sogaard2023_graphnet_neutrino, Orsoe2025_graphnet2_library,
+Orsoe2026_nubench_benchmark, Bukhari2023_icecube_kaggle} and carried to
+IceCube-Gen2 and IceAct \citep{VaraCarbonell2025_IceCubeGen2_ML,
+Paul2025_IceAct_spectrum}. Cosmic-ray observatories follow
+\citep{Rodriguez2025_Auger_photon, Ferriere2025_GRAND_cosmicray}, interferometers
+are simulated on graphs \citep{Kannan2025_interferometer_GNN}, and the scheduling
+of the telescopes themselves --- a combinatorial graph problem --- yields to the
+same tools \citep{Wang2022_spectroscopy_resourceallocation,
+Cranmer2021_resourceallocation_unsupervised}.
 
+\subsection{Stellar populations, the Milky Way, and dark-matter substructure}
+\label{sec:app-stellar}
+Closer to home, GNNs sort stars and probe the dark sector. Chemical tagging ---
+the attempt to reunite stars born together --- is recast as a graph problem,
+through attention over abundances \citep{Spina2025_chemicaltagging_GAT} and
+through graph kernels \citep{Ting2023_WLkernel_chemicaltagging}. Substructure in
+the Milky Way halo emerges from Gaia and APOGEE
+\citep{Berni2025_MWhalo_substructure}, the masses of the Milky Way and Andromeda
+are inferred from their satellites \citep{VillanuevaDomingo2023_MW_mass}, and the
+density profiles of dwarf galaxies --- a direct handle on dark matter --- are
+uncovered with graph networks \citep{Nguyen2023_dwarf_densityprofile,
+Nguyen2025_dwarf_GraphNPE}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+\section{Best Practices}
+\label{sec:bestpractices}
+
+Principles guide; practice decides. This section gathers the hard-won, sometimes
+deflating advice that the rest of the chapter implies: which layers to try
+first, when to leave the graph on the shelf, how to bake in what we already
+know, and how to read the literature without being fooled.
+
+\subsection{Choosing an architecture}
+\label{sec:bp-choose}
+For a first attempt, message passing and \texttt{SAGEConv} layers are almost
+always a sound start; attention layers tend to train unstably, and plain graph
+convolution is often too inexpressive. For the aggregator, begin with a sum or a
+maximum, or simply concatenate several. These are starting points, not
+commandments.
+
+\subsection{When not to use a graph}
+\label{sec:bp-when-not}
+A graph is the wrong tool for data that already carry more structure. Regular,
+evenly sampled one-dimensional sequences, images on a grid, and very large
+datasets of very large graphs each have more efficient homes --- though we note
+that it is \emph{regularity}, not low dimension, that decides: irregular
+sequences of varying length sit naturally on a graph
+\citep{Iqbal2025_cluster_xray_GNN}. Two further cautions. Very deep GNNs risk
+\emph{oversmoothing}, in which repeated message passing washes node
+representations toward a common value; residual connections, normalisation, or
+simple restraint help. And GNNs are not cheap: the price of their generality,
+of the few assumptions they make about domain or signal, is a heavier compute
+bill than a structure-exploiting model would pay.
+
+\subsection{Embedding inductive biases}
+\label{sec:bp-bias}
+Do not learn what you already know. We learn faster, cheaper, and more robustly
+when we hand the model the structure we trust --- through the symmetries we
+build in, and through the graph we construct (time resolution, locality,
+causality)\citep{Jespersen2022_mangrove,Chuang2024_mergertree_GNN,
+Jespersen2026_environment_assembly}. None of this forbids a flexible model from
+finding the same solution; it merely spares it the trouble. A graph is itself
+so strong a prior that a wrong one misleads
+\citep{BechlerSpeicher2023_graph_overuse}, and where a symmetry holds only
+approximately, a soft constraint can outperform a hard one, at the cost of
+softer guarantees \citep{Finzi2021_RPP_softequivariance}.
+
+\subsection{Pitfalls, diagnostics, and validation}
+\label{sec:bp-diagnostics}
+% TODO: expand. False invariance/equivariance claims; sim->real shift;
+% sensitivity to the chosen adjacency; verification in the spirit of SBI
+% diagnostics \citep{Thiele2026_SBI_review}.
+
+\subsection{Reading the astro-GNN literature}
+\label{sec:bp-reading}
+A short field guide. Look for two things: a direct line from the problem to the
+architecture, geometry, and inductive biases it invokes; and a real gain, in
+performance or interpretability, over simpler baselines. Be wary of two red
+flags: claimed invariances or equivariances the model does not possess, and
+graphs deployed where a grid or a sequence would serve better. In short, the
+graph should earn its place.
 
 
-
-\section*{Appendix}
-\addcontentsline{toc}{section}{Appendix}
-
-When placed at the end of a chapter or contribution (as opposed to at the end of the book), the numbering of tables, figures, and equations in the appendix section continues on from that in the main text. Hence please \textit{do not} use the \verb|appendix| command when writing an appendix at the end of your chapter or contribution. If there is only one the appendix is designated ``Appendix'', or ``Appendix 1'', or ``Appendix 2'', etc. if there is more than one.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+\section{Frontier}
+\label{sec:frontier}
 
+The frontier runs wherever astrophysics outgrows point-wise statistics, and we
+flag a few directions. \emph{Generative} graph models remain hard, and largely
+unproven on astrophysical data, yet merger-tree and field generation already
+press on the question \citep{Nguyen2024_FLORAH_assembly,
+Nguyen2025_mergertree_generative,Tang2022_merger_normalizingflow,
+Onutu2025_scorematching_cosmology}. \emph{Geometric graphs}, whose nodes carry
+coordinates and whose symmetry is therefore spatial as well as permutational,
+promise a more interpretable handle on large-scale structure, at the price of
+the extra equivariances one must respect \citep{Lee2025_topological_cosmology,
+GarciaSatorras2021_EGNN_equivariant}. \emph{Temporal} GNNs, on changing graphs,
+fit the time-ordered data of assembly and of transient surveys. And simulation-
+based inference, the subject of a companion chapter, marries naturally to GNNs
+that learn summaries of genuinely graph-structured data
+\citep{Thiele2026_SBI_review} --- a direction we look forward to pursuing on
+real data ourselves.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+\section{Tutorials}
+\label{sec:tutorials}
 
-
-
-\biblstarthook{References should be \textit{cited} in the text by number.\footnote{Please make sure that all references from the list are cited in the text. Those not cited should be moved to a separate \textit{Further Reading} section.} The reference list should be \textit{sorted} in alphabetical order. If there are several works by the same author, the following order should be used: 
-\begin{enumerate}
-\item all works by the author alone, ordered chronologically by year of publication
-\item all works by the author with a coauthor, ordered alphabetically by coauthor
-\item all works by the author with several coauthors, ordered chronologically by year of publication.
-\end{enumerate}
-For the reference style, we suggest to use \textit{LaTeX (US)} from INSPIRE.}
-
-\cite{2022MLS&T...3a5023W}
-
-% \LaTeX{} \cite{latex2e} is a set of macros built atop \TeX{} \cite{unsrt}.
-\bibliographystyle{unsrt} % We choose the "plain" reference style
-\bibliography{ref} % Entries are in the refs.bib file
-
-% \begin{thebibliography}{99}
-
-% % \cite{LIGOScientific:2016aoc}
-% \bibitem{LIGOScientific:2016aoc}
-% B.~P.~Abbott \textit{et al.} [LIGO Scientific and Virgo],
-% %``Observation of Gravitational Waves from a Binary Black Hole Merger,''
-% Phys. Rev. Lett. \textbf{116}, no.6, 061102 (2016)
-% doi:10.1103/PhysRevLett.116.061102
-% [arXiv:1602.03837 [gr-qc]].
-% %7349 citations counted in INSPIRE as of 06 Jan 2022
-
-% % \cite{Einstein:1916vd}
-% \bibitem{Einstein:1916vd}
-% A.~Einstein,
-% %``The Foundation of the General Theory of Relativity,''
-% Annalen Phys. \textbf{49}, no.7, 769-822 (1916)
-% doi:10.1002/andp.19163540702
-% %1236 citations counted in INSPIRE as of 06 Jan 2022
-
-% %\cite{Hawking:1975vcx}
-% \bibitem{Hawking:1975vcx}
-% S.~W.~Hawking,
-% %``Particle Creation by Black Holes,''
-% Commun. Math. Phys. \textbf{43}, 199-220 (1975)
-% [erratum: Commun. Math. Phys. \textbf{46}, 206 (1976)]
-% doi:10.1007/BF02345020
-% %9331 citations counted in INSPIRE as of 06 Jan 2022
-
-% %\cite{Penrose:1969pc}
-% \bibitem{Penrose:1969pc}
-% R.~Penrose,
-% %``Gravitational collapse: The role of general relativity,''
-% Riv. Nuovo Cim. \textbf{1}, 252-276 (1969)
-% doi:10.1023/A:1016578408204
-% %1319 citations counted in INSPIRE as of 06 Jan 2022
-
-% \end{thebibliography}
-
-
-
+Theory carries only so far; the reader who wishes to experiment will find a
+hands-on GNN tutorial at \url{https://tinyurl.com/GNN1tutorial} and a companion
+competition --- on the connection between a galaxy and its environment --- at
+\url{https://tinyurl.com/GNNcompetition}. Beyond these, three external resources
+repay the visit: the interactive ``Gentle Introduction to Graph Neural
+Networks'' on Distill; the Stanford CS224W course with its Colab notebooks; and
+the geometric-deep-learning proto-book and lectures of
+\citet{Bronstein2021_geometricDL_book}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{Summary and Outlook}
+\label{sec:summary}
+% DRAFT -- CKJ to review before we finalise.
+
+We set out to teach a principle, not a catalogue. Physics advances by geometry,
+and the algorithms we build for it ought to do the same: fit the structure the
+data actually have, respect the symmetries we already trust, and learn only what
+remains. The geometric blueprint turns this conviction into a recipe, and the
+graph neural network is its most general instrument --- the one from which
+convolutional networks, transformers, and deep sets all fall out as special
+cases.
+
+Three threads run through the chapter. First, geometry: weigh the native
+structure of both the domain and the signal before you reach for an
+architecture. Second, the graph: a relational substrate that fits merger trees,
+detectors, and the cosmic web where a grid never will, and whose adjacency is a
+design choice we set from physics or learn. Third, the graph neural network:
+message passing as a learnable force law, assembled from a handful of layers and
+aggregators that the reader can now read off and adapt at will.
+
+The strength of the approach lies not in symmetry, prior knowledge, or
+flexibility alone, but in the three held together. A graph neural network lets
+us bake in the symmetries and the structure we trust while we stay free to fit
+what we do not yet understand --- and it speaks, throughout, the native language
+of physics: objects, and the relations between them.
+
+The frontier is wide and largely open: generative models of cosmic structure,
+geometric graphs for the web, temporal graphs for an evolving and transient sky,
+and simulation-based inference on real, graph-structured data. The tools are
+ready; the Universe, as ever, is under no obligation to be simple.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% ===================== APPENDICES =====================
+% Springer: end-of-chapter appendices use the heading "Appendix" (no \appendix).
+\input{notes/appendix_symmetries}
+
+\section{Appendix: Why a convolution is the only translation-equivariant layer}
+\label{app:conv-proof}
+% TODO: write the instructive derivation that a linear map commutes with all
+% shifts iff it is a convolution (with the converse). Companion example: the
+% Deep Sets characterisation -- permutation-invariant set functions take the
+% form rho(sum phi(x_i)), and a permutation-equivariant linear layer is
+% a I + b (1 1^T)/n \citep{Zaheer2017_deepsets}.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\bibliographystyle{spbasic}   % Springer basic author-year style
+\bibliography{ref}
+
 
 \end{document}
-
