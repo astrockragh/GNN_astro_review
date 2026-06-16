@@ -25,8 +25,9 @@
 \usepackage[bottom]{footmisc}% places footnotes at page bottom
 
 \usepackage{hyperref}        %for hyperlinks
-\hypersetup{colorlinks=true,urlcolor=blue}
+% \hypersetup{colorlinks=true,urlcolor=blue}
 
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
 \usepackage[misc]{ifsym}
 
 \makeindex             % used for the subject index
@@ -721,13 +722,7 @@ real data ourselves.
 \section{Tutorials}
 \label{sec:tutorials}
 
-Theory carries only so far; the reader who wishes to experiment will find a
-hands-on GNN tutorial at \url{https://tinyurl.com/GNN1tutorial} and a companion
-competition --- on the connection between a galaxy and its environment --- at
-\url{https://tinyurl.com/GNNcompetition}. Beyond these, three external resources
-repay the visit: the interactive ``Gentle Introduction to Graph Neural
-Networks'' on Distill; the Stanford CS224W course with its Colab notebooks; and
-the geometric-deep-learning proto-book and lectures of
+Theory carries only so far; the reader who wishes to experiment will find a hands-on GNN tutorial at \url{https://tinyurl.com/GNN1tutorial} and a companion competition --- on the connection between a galaxy and its environment --- at \url{https://tinyurl.com/GNNcompetition}. Beyond these, three external resources repay the visit: the interactive ``Gentle Introduction to Graph Neural Networks'' on Distill; the Stanford CS224W course with its Colab notebooks; and the geometric-deep-learning proto-book and lectures of
 \citet{Bronstein2021_geometricDL_book}.
 
 
@@ -765,12 +760,24 @@ geometric graphs for the web, temporal graphs for an evolving and transient sky,
 and simulation-based inference on real, graph-structured data. The tools are
 ready; the Universe, as ever, is under no obligation to be simple.
 
+\section{Acknowledgments}
+\label{sec:acknowledgements}
+
+CKJ wishes to thank Marielle Côté-Gendreau for ever-present help with formulating the text and arguments presents here. CKJ furthermore deeply thanks the organizers and participants of the the Kavli Institute for Theoretical Physics “Building a Physical Understanding of Galaxy Evolution with Data-driven Astronomy" program, as well as the organizers and participants of the Centre de recherche en astrophysique du Québec (CRAQ) Summer School on Scientific Machine Learning Applied to Astrophysical Data, both of which enabled me to develop the ability to efficiently communicate the guiding principles behind Graph Neural Networks and Geometric Deep Learning. I am furthermore grateful to many useful and illuminating conversations on GNNs and the many considerations concerning them with John F. Wu, Miles Cranmer, Peter Melchior, David Spergel, Shirley Ho, Paco Villaescusa-Navarro, Lucas Makinen, Chen-Yu Chuang, Adi Varshney, Vasily Belokurov, Tri Nguyen, Kwok Sun Tang, Natalí de Santi, Jordan Krywonos, Laurence Perreault Levasseur, and many others.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 % ===================== APPENDICES =====================
 % Springer: end-of-chapter appendices use the heading "Appendix" (no \appendix).
+
+
+\bibliographystyle{aasjournal}   % Springer basic author-year style
+\bibliography{ref}
+
+\clearpage
+
 \input{notes/appendix_symmetries}
 
 \section{Appendix: Why a convolution is the only translation-equivariant layer}
@@ -783,10 +790,6 @@ ready; the Universe, as ever, is under no obligation to be simple.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-\bibliographystyle{spbasic}   % Springer basic author-year style
-\bibliography{ref}
 
 
 \end{document}
