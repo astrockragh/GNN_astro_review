@@ -86,6 +86,7 @@ The recipe takes only a few inputs, the problem you pose, the signal you aim to 
 \subsection{The geometries of the domain and of the signal}
 \label{sec:domain-signal}
 
+% this whole section needs to be rewritten a bit to also contain the model symmetry (the hypothesis class geometry from Bronstein)
 Any learning problem hides two geometries, and a good model respects both. The geometry of the \emph{domain} comes first: the support on which the data live, a regular grid, a sphere, an irregular point cloud, a graph. The geometry of the \emph{signal} comes second: the structure of the field defined on that support, which carries its own symmetries, a scalar temperature, a vector velocity, a tensor shear, on whatever grid we happen to sample it.
 
 The lesson repeats throughout this chapter, so we state it once and plainly: choose the algorithm that respects the native geometry of both the domain and the signal. Impose no symmetry the data lack, and discard none they hold. A convolutional network presumes a regular grid; run it on a sphere or an irregular detector and you must first voxelise, and so invent a translational structure that does not exist. Where the domain turns genuinely irregular, the graph offers not a stylistic preference but the only faithful description.
