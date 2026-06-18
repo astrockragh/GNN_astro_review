@@ -3,3 +3,6 @@
 GNNs_summer_school_1.pdf
 *.key
 data
+figures/crop_*.png
+figures/*.py
+animations

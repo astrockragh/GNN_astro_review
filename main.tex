@@ -91,10 +91,9 @@ Any learning problem hides two geometries, and a good model respects both. The g
 
 The lesson repeats throughout this chapter, so we state it once and plainly: choose the algorithm that respects the native geometry of both the domain and the signal. Impose no symmetry the data lack, and discard none they hold. A convolutional network presumes a regular grid; run it on a sphere or an irregular detector and you must first voxelise, and so invent a translational structure that does not exist. Where the domain turns genuinely irregular, the graph offers not a stylistic preference but the only faithful description.
 
-% TODO: create this figure
 \begin{figure}[t]
-\includegraphics[width=\textwidth]{figures/TODO_domain_signal_geometry}% TODO: make own figure
-\caption{TODO --- MAKE OWN VERSION. The two geometries of a learning problem: the \emph{domain} (grid, sphere, point cloud, graph) and the \emph{signal} upon it (scalar, vector, tensor field), with the algorithm each admits.}
+\includegraphics[width=\textwidth]{figures/domain_signal_model}
+\caption{The three geometries of a learning problem. Each column adds one: the \emph{domain} where the data live, the \emph{signal} that rides upon it, and the \emph{model} the two together imply; the rows fall from the abstract to two concrete cases. A galaxy sits on a pixel grid, whose translations and right-angle rotations a convolutional network inherits before a global pooling returns one rotation-invariant number, here the time since its last merger. A halo catalogue forms an irregular point cloud whose only native symmetry is permutation; a linking length adds edges, and with them a bias towards local influence, so a graph network reads each node's velocity while a deep set pools the whole to the global $\Lambda$CDM parameters. Choose the model whose symmetry sits inside the domain's: at worst it must not outlaw the true solution, at best it matches the signal's.}
 \label{fig:domain_signal}
 \end{figure}
 
