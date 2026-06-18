@@ -93,8 +93,10 @@ The lesson repeats throughout this chapter, so we state it once and plainly: cho
 
 \begin{figure}[p]
 \centering
-\makebox[\linewidth][c]{\includegraphics[width=1.05\linewidth]{figures/domain_signal_model}}
-\caption{The three geometries of a learning problem. Each column adds one: the \emph{domain} where the data live, the \emph{signal} that rides upon it, and the \emph{model} the two together imply; the rows fall from the abstract to two concrete cases. A galaxy sits on a pixel grid, whose translations and right-angle rotations a convolutional network inherits before a global pooling returns one rotation-invariant number, here the time since its last merger. A halo catalogue forms an irregular point cloud whose only native symmetry is permutation; a linking length adds edges, and with them a bias towards local influence, so a graph network reads each node's velocity while a deep set pools the whole to the global $\Lambda$CDM parameters. Choose the model whose symmetry sits inside the domain's: at worst it must not outlaw the true solution, at best it matches the signal's.}
+\hspace{-0.5cm}
+  % Answer: [trim={left bottom right top},clip]  
+\makebox[\linewidth][c]{\includegraphics[trim={0cm 4.1cm 0cm 1cm},clip, width=1.45\linewidth]{figures/domain_signal_model.png}}
+\caption{The three geometries of a learning problem. Each column adds one: the \emph{domain} where the data live, the \emph{signal} that exists upon it, and the one of the \emph{model}. In a well-motivated case, the domain and signal \emph{imply} the model to be used. The first row represents the rows fall from the abstract to two concrete cases. A galaxy sits on a pixel grid, whose translations and right-angle rotations a convolutional network inherits before a global pooling returns one rotation-invariant number, here the time since its last merger (but generalisable to most scalars). A halo catalogue forms an irregular point cloud whose only native symmetry is permutation; a linking length adds edges, and with them a bias towards local influences. We should choose the model whose symmetry respects the domain without excessive preprocessing, and is able to fully express the signal. As a minimum, it must not outlaw the true solution, at best, it matches it exactly.}
 \label{fig:domain_signal}
 \end{figure}
 
