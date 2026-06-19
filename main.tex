@@ -83,13 +83,13 @@ This chapter proceeds in three movements: the geometry of learning and the bluep
 This section makes a promise in Helv\'etius's spirit: master a few principles, and you can always \emph{derive}, rather than memorise, the right architecture for the problem before you.\footnote{The right architecture will often turn out to be a GNN.}
 The recipe takes only a few inputs, the problem you pose, the signal you aim to measure, the domains on which the data and signal live, and the symmetries to respect, and then returns the architecture to use. In the following sections, we show how to define the geometry of the data domain, that of the signal, introduce the necessary language of symmetry, and assemble the blueprint from which any modern architecture, CNN, Transformer, or GNN, all descend.
 
-\subsection{The geometries of the domain and of the signal}
+\subsection{The geometries of the domain, the signal, and the model}
 \label{sec:domain-signal}
 
 % this whole section needs to be rewritten a bit to also contain the model symmetry (the hypothesis class geometry from Bronstein)
-Any learning problem hides two geometries, and a good model respects both. The geometry of the \emph{domain} comes first: the support on which the data live, a regular grid, a sphere, an irregular point cloud, a graph. The geometry of the \emph{signal} comes second: the structure of the field defined on that support, which carries its own symmetries, a scalar temperature, a vector velocity, a tensor shear, on whatever grid we happen to sample it.
+Any learning problem hides three geometries, that of the domain on which the data exist, that of the signal we wish to infer, and that of the model. A good model respects both the geometry of the domain and the signal. The geometry of the \emph{domain} comes first: the support on which the data live, a regular grid, a sphere, an irregular point cloud, a graph. The geometry of the \emph{signal} comes second: the structure of the field defined on that support, which carries its own symmetries, a scalar temperature, a vector velocity, a tensor shear, on whatever grid we happen to sample it.
 
-The lesson repeats throughout this chapter, so we state it once and plainly: choose the algorithm that respects the native geometry of both the domain and the signal. Impose no symmetry the data lack, and discard none they hold. A convolutional network presumes a regular grid; run it on a sphere or an irregular detector and you must first voxelise, and so invent a translational structure that does not exist. Where the domain turns genuinely irregular, the graph offers not a stylistic preference but the only faithful description.
+The lesson repeats throughout this chapter, so we state it once and plainly: choose the algorithm that respects the native geometry of both the domain and the signal. Impose no symmetry the data lack, and discard none they hold. A convolutional network presumes a regular grid; run it on a sphere or an irregular detector and you must first voxelise, and so invent a translational structure that does not exist, biasing the learning. Where the domain turns genuinely irregular, the graph offers not a stylistic preference but the only faithful description.
 
 \begin{figure}[p]
 \centering
@@ -106,6 +106,13 @@ The lesson repeats throughout this chapter, so we state it once and plainly: cho
 A \emph{symmetry} names a transformation that leaves some property untouched. The physicist meets symmetry early: the outcome of an experiment does not depend on where the bench stands, which way it faces, or when one runs it. The transformations that preserve a structure form a \emph{group}, and the way that group acts on our data, through linear maps we call \emph{representations}, dictates how a sensible model behaves. We keep the formal account, the group axioms and the representation theory, to Appendix~\ref{app:symmetries}; here two words suffice.
 
 A function stays \emph{invariant} when the group action leaves its output unchanged, and turns \emph{equivariant} when the output transforms in step with the input. The distinction draws the line between a scalar and a vector. Rotate a molecule: its total energy does not move (invariant), yet the force on each atom rotates with it (equivariant). The same split organises every prediction we make on a graph, and we return to it in Sect.~\ref{sec:gnn}. Invariance, note, amounts to the special case of equivariance in which the output carries the trivial representation.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.99\linewidth]{figures/3planets_annotated_energy_L_v.png}
+    \caption{\textbf{Invariances and equivariances in a physical system}. For a planetary system, vector quantities such as forces and velocities are \textit{equivariant} under rotations, meaning that that they transform \textit{with} the rotation. Scalar quantities, such as energy or eccentricities, are \textit{invariant} to such transformations. Both are symmetries, but the distinction must always be kept in mind.}
+    \label{fig:placeholder}
+\end{figure}
 
 \subsection{The geometric blueprint, and the convolutional network it implies}
 \label{sec:blueprint}
