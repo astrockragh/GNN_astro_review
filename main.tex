@@ -111,7 +111,14 @@ A function stays \emph{invariant} when the group action leaves its output unchan
     \centering
     \includegraphics[width=0.99\linewidth]{figures/white_3planets_annotated_energy_L_v.png}
     \caption{\textbf{Invariances and equivariances in a physical system}. For a planetary system, vector quantities such as forces and velocities are \textit{equivariant} under rotations, meaning that that they transform \textit{with} the rotation. Scalar quantities, such as energy or eccentricities, are \textit{invariant} to such transformations. Both are symmetries, but the distinction must always be kept in mind.}
-    \label{fig:placeholder}
+    \label{fig:rotation_demonstration}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.99\linewidth]{figures/permutation_inv_equiv.png}
+    \caption{\textbf{Invariance and equivariance under permutation}. A single cosmic graph --- halos joined by proximity, sized by mass, sorted two ways --- carries the same physics under either labelling, with the permutation $P$ that relates the two orderings written as a condensed permutation matrix. Reorder the nodes and the graph holds: a graph-level read-out such as the cosmic matter density $\Omega_M$ stays put (invariant), whilst the per-halo stellar masses $M_\star$ travel with the relabelling (equivariant). A graph neural network must honour both, so that each halo keeps its prediction whatever index it happens to wear.}
+    \label{fig:permutation_demonstration}
 \end{figure}
 
 \subsection{The geometric blueprint, and the convolutional network it implies}
