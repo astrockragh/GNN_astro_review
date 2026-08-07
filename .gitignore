@@ -6,3 +6,15 @@ data
 figures/crop_*.png
 figures/*.py
 animations
+
+# macOS cruft
+.DS_Store
+
+# scratch screenshots
+Screenshot *.png
+
+# macOS cruft
+.DS_Store
+
+# scratch screenshots
+Screenshot *.png
