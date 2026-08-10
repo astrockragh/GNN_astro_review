@@ -153,19 +153,21 @@ Geometric deep learning surveys five families of domain, the grid, the group, th
 \begin{table}[t]
 \caption{Common geometric architectures as instances of the geometric deep learning blueprint, after \citet{Bronstein2021_geometricDL_book} (trimmed). The highlighted row marks the GNN, the focus of this chapter.}
 \label{tab:gdl_architectures}
-\centering\footnotesize\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lll>{\raggedright\arraybackslash}p{2.2cm}>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{2.8cm}}
+\centering\footnotesize\setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.5}
+\makebox[\linewidth][c]{%
+\begin{tabular}{llll>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{2.8cm}}
 \hline\noalign{\smallskip}
 Architecture & Domain $\Omega$ & Symmetry $G$ & Locality & Example (non-astro) & Example (astronomy) \\
 \noalign{\smallskip}\svhline\noalign{\smallskip}
-CNN           & Grid           & Translation            & local patch & image classification \citep{Krizhevsky2012_alexnet_imagenet} & galaxy morphology \citep{Dieleman2015_galaxymorphology_CNN} \\
-Spherical CNN & Sphere         & Rotation $SO(3)$       & local cap   & omnidirectional vision \citep{Cohen2018_spherical_CNN} & weak-lensing maps \citep{Perraudin2019_deepsphere_spherical} \\
+CNN           & Grid           & Translation            & Local patch & Image classification \citep{Krizhevsky2012_alexnet_imagenet} & Galaxy morphology \citep{Dieleman2015_galaxymorphology_CNN} \\
+Spherical CNN & Sphere         & Rotation $SO(3)$       & Local cap   & Omnidirectional vision \citep{Cohen2018_spherical_CNN} & Weak-lensing maps \citep{Perraudin2019_deepsphere_spherical} \\
 \rowcolor{rowhl}
-GNN           & Graph          & Permutation $\Sigma_n$ & neighbours  & molecular properties \citep{Gilmer2017_MPNN_quantumchemistry} & merger trees \citep{Jespersen2022_mangrove} \\
-Deep Sets     & Set            & Permutation $\Sigma_n$ & none        & point clouds \citep{Zaheer2017_deepsets} & cosmic voids \citep{Cranmer2021_histpool_deepsets} \\
-Transformer   & Complete graph & Permutation $\Sigma_n$ & all-to-all  & language \citep{Vaswani2017_transformer_attention} & light curves \citep{DonosoOliva2023_astromer_transformer} \\
+GNN           & Graph          & Permutation $\Sigma_n$ & Neighbours  & Molecular properties \citep{Gilmer2017_MPNN_quantumchemistry} & Merger trees \citep{Jespersen2022_mangrove} \\
+Deep Sets     & Set            & Permutation $\Sigma_n$ & None        & Point clouds \citep{Zaheer2017_deepsets} & Cosmic voids \citep{Cranmer2021_histpool_deepsets} \\
+Transformer   & Complete graph & Permutation $\Sigma_n$ & All-to-all  & Language \citep{Vaswani2017_transformer_attention} & Light curves \citep{DonosoOliva2023_astromer_transformer} \\
 \noalign{\smallskip}\hline
-\end{tabular}
+\end{tabular}%
+}
 \end{table}
 
 
