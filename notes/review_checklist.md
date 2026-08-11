@@ -13,7 +13,7 @@ Everything that changed in round 1 (and 1b), everything I authored in your voice
 ## B. On Overleaf, before reading anything
 
 - [ ] Push and compile. My sandbox build is clean (0 errors, 0 undefined refs, 49 pp) but used grey placeholder images, so float placement there means nothing.
-- [ ] **Float placement with the real figures.** Watch especially: the new sidewaystable (§1.5), the five new figures (linking-length, solar system, IceCube, flowchart, oversmoothing, papers-per-year), and whether anything piles up at the bibliography. A `\clearpage` before §1.6 is the blunt fix if the table blocks the queue.
+- [ ] **Float placement with the real figures.** Watch especially: the rotated applications table (§1.5 — now a manual `\rotatebox` inside an ordinary `[p]` float, since svmult and `rotating`'s sidewaystable misplace each other; check it lands on a sensible page and reads bottom-up the way you like), the five new figures (linking-length, solar system, IceCube, flowchart, oversmoothing, papers-per-year), and whether anything piles up at the bibliography. A `\clearpage` before §1.6 is the blunt fix if the table blocks the queue.
 - [ ] The preamble gained `tikz` (+ `shapes.geometric, arrows.meta, positioning` libraries) and a `\providecommand` block for AAS macros. Both standard on Overleaf, but confirm no clash with svmult.
 - [ ] Check the ToC: §1.4 now runs ...1.4.5 pooling → **1.4.6 equivariant message passing (new)** → 1.4.7 sampling → 1.4.8 zoo. All cross-refs are `\ref`-based so numbering should follow, but eyeball it.
 - [ ] Figure numbering shifted (linking-length lands ~1.11 and pushes the rest). Confirm no stale hard-coded figure numbers anywhere in your own older text.
@@ -53,7 +53,7 @@ Everything that changed in round 1 (and 1b), everything I authored in your voice
 - [ ] **Fig oversmoothing (§1.6.5):** caption says "zero, two, and twelve rounds" (matches the script's L = 0/2/12) and frames the variance panel as "the diagnostic to run when a deep GNN underperforms a shallow one".
 - [ ] **Fig papers-per-year (§1.7):** hatching = includes real observations; annotation block (58 / 12 / 7-of-42); "incomplete year" tag on 2026.
 - [ ] **Fig 1.9 (workflow):** caption now ends "Figure reproduced from Chuang et al. (2024), itself closely inspired by the graph-network block of Battaglia et al. (2018)." Two `%`-notes above the figure preserve the notation-mismatch observation (φ/ρ in the panel vs your ψ/φ/⊕) for a future redraw.
-- [ ] **Table 1.x (applications, sideways):** caption + all ~18 rows are my classification of your literature. Check every row, especially the *Layer* column (e.g. "convolutional" for Kololgi, "attentional" for Iqbal/Spina, "`SAGEConv`" for the trees), the *Graph* column ("Delaunay/proximity", "sequence-as-graph", "conflict graph (imposed)"), and that the *Real data* column agrees with the figure script's classification.
+- [ ] **Table 1.x (applications, rotated):** caption + all ~18 rows are my classification of your literature. Check every row, especially the *Layer* column (e.g. "convolutional" for Kololgi, "attentional" for Iqbal/Spina, "`SAGEConv`" for the trees), the *Graph* column ("Delaunay/proximity", "sequence-as-graph", "conflict graph (imposed)"), and that the *Real data* column agrees with the figure script's classification.
 
 ## E. Facts I asserted that deserve verification
 

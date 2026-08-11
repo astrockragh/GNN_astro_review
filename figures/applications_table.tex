@@ -1,10 +1,19 @@
 % applications_table.tex -- survey summary table for Sect. 1.5 (input by main.tex)
 % One glance answers: has anyone done X, on what graph, with what layer, on real data?
-\begin{sidewaystable}
+% Built as a manual sideways table: svmult and rotating's sidewaystable misplace
+% each other, so we rotate by hand inside an ordinary page float. The minipage
+% pins caption and table to one width (the text-block height, since the block
+% is rotated), \resizebox fills that width, and the float page centres the rest.
+\begin{table}[p]
+\centering
+\rotatebox{90}{%
+\begin{minipage}{0.95\textheight}
 \caption{The astro-GNN literature at a glance, organised by subfield and task. \emph{Level} gives the prediction type of \S~\ref{subsec:tasks}; \emph{graph} names the construction of \S~\ref{subsec:no-adjacency}; \emph{real data} marks analyses that include real observations (the minority, see \S~\ref{sec:frontier}). References are representative, not exhaustive.}
 \label{tab:applications}
+\centering
 \footnotesize
 \setlength{\tabcolsep}{4.5pt}
+\resizebox{\textwidth}{!}{%
 \begin{tabular}{p{2.55cm} p{4.1cm} p{1.35cm} p{2.6cm} p{2.2cm} p{0.95cm} p{5.6cm}}
 \hline\noalign{\smallskip}
 Subfield & Task & Level & Graph & Layer & Real data & Representative references \\
@@ -32,5 +41,6 @@ Instruments & fibre assignment, resource allocation & node & conflict graph (imp
  & neutrino-event reconstruction & graph & k-NN over hits (causal) & mixed & yes & \citet{Choma2018_IceCube_classification, Abbasi2022_IceCube_lowenergy, Sogaard2023_graphnet_neutrino, Soldin2025_IceCube_GCN} \\
  & cosmic rays, interferometry & graph & detector geometry & mixed & yes & \citet{Ferriere2025_GRAND_cosmicray, Rodriguez2025_Auger_photon, Kannan2025_interferometer_GNN} \\
 \noalign{\smallskip}\hline
-\end{tabular}
-\end{sidewaystable}
+\end{tabular}}
+\end{minipage}}
+\end{table}
