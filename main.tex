@@ -474,7 +474,8 @@ Dynamics are governed by forces enacted by particles on one another within some 
 
 \begin{figure}[t]
 % TODO (CKJ): confirm permission/licence wording with IOP (MLST) for reproducing this figure.
-\includegraphics[width=\textwidth]{figures/solar_system_graph.jpg}
+\centering
+\includegraphics[width=0.8\textwidth]{figures/solar_system_graph.jpg}
 \caption{The solar system embedded in a graph network. Thirty-one bodies --- the Sun, the planets, Pluto, and the largest moons --- form the nodes, drawn from thirty years of NASA HORIZONS ephemerides sampled every thirty minutes; the edges carry the pairwise gravitational interaction. Trained on these orbits, the interaction network learns the dynamics, and symbolic regression over its edge messages hands back Newton's law of gravitation together with the masses of the bodies. Figure from \citet{Lemos2023_orbitalmechanics_symbolic}.}
 \label{fig:solar_system_graph}
 \end{figure}
@@ -494,7 +495,8 @@ The hardness is inherent to the task. At its core, fibre assignment is a \emph{m
 Detectors rarely sit on perfect grids, and the neutrino telescope least of all --- making it ideally viewed as a graph. GNNs reconstruct IceCube events much faster and more precisely than the classical likelihood pipeline \citep{Choma2018_IceCube_classification, Jespersen2021_icecube_bachelor, Abbasi2022_IceCube_lowenergy, Soldin2025_IceCube_GCN}, an effort the \texttt{GraphNeT} library and its benchmarks now consolidate \citep{Bukhari2023_icecube_kaggle, Sogaard2023_graphnet_neutrino, Orsoe2025_graphnet2_library, Orsoe2026_nubench_benchmark} and carry to IceCube-Gen2 and IceAct with combined Transformer-GNN architectures \citep{Paul2025_IceAct_spectrum, VaraCarbonell2025_IceCubeGen2_ML}. Cosmic-ray observatories follow the same principles and thus yield to the same solutions \citep{Ferriere2025_GRAND_cosmicray, Rodriguez2025_Auger_photon}, and radio-interferometric calibration also yields to graph-based simulation-trained networks \citep{Kannan2025_interferometer_GNN}. Wherever the instrument forsakes the Euclidean grid, the graph solves the problem.
 
 \begin{figure}[t]
-\includegraphics[width=\textwidth]{figures/icecube_graph.png}
+\centering
+\includegraphics[width=0.7\textwidth]{figures/icecube_graph.png}
 \caption{Example event displays in the IceCube detector, the irregular sensor array that graph networks read natively. The size of spheres represents the amount of light observed in each DOM; larger spheres correspond to more light observed. The dotted black line represents the incoming neutrino, the black circle the cascade, and the solid black line the outgoing muon track. The size of the black round marker is proportional to the energy of the cascade at the vertex. The colour represents the timing of the hit, where the earliest hits are coloured in red and the latest hits in blue. Low energy events have significantly fewer hits. Reproduced from \citet{Abbasi2022_DeepCore_reconstruction} with kind permission of The European Physical Journal (EPJ).}
 \label{fig:icecube_graph}
 \end{figure}
