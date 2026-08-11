@@ -11,10 +11,10 @@
   lab/.style={font=\scriptsize\itshape, fill=white, inner sep=1pt},
 ]
 \node[question] (grid) {Data on a regular grid or sequence?};
-\node[answer, right=14mm of grid] (cnn) {CNN / RNN / Transformer\\ (\S~\ref{subsec:bp-when-not})};
+\node[answer, right=14mm of grid] (cnn) {CNN / RNN / Transformer\\ (\S\ref{subsec:bp-when-not})};
 \node[question, below=of grid] (edges) {Edges known from physics?};
-\node[answer, right=14mm of edges] (four) {choose: set, complete, or learned\\ (\S~\ref{subsec:no-adjacency})};
-\node[answer, below=of edges] (impose) {impose the graph\\ (\S~\ref{subsec:no-adjacency})};
+\node[answer, right=14mm of edges] (four) {choose: set, complete, or learned\\ (\S\ref{subsec:no-adjacency})};
+\node[answer, below=of edges] (impose) {impose the graph\\ (\S\ref{subsec:no-adjacency})};
 \node[question, below=of impose] (msg) {Message must depend on edge or receiver features?};
 \node[final, below left=8mm and 2mm of msg] (sage) {\texttt{SAGEConv}\\ \scriptsize cheap, stable, convolutional};
 \node[final, below right=8mm and 2mm of msg] (mp) {full message passing\\ \scriptsize expressive, costlier};
