@@ -1,0 +1,33 @@
+% architecture_flowchart.tex -- TikZ decision tree for Sect. 1.6.1 (input by main.tex)
+% Condenses the choosing-an-architecture advice into one diagram.
+\begin{tikzpicture}[
+  font=\small,
+  node distance=6mm and 8mm,
+  question/.style={diamond, aspect=2.6, draw=black!70, fill=rowhl, align=center, inner sep=1pt, text width=30mm},
+  answer/.style={rectangle, rounded corners=2pt, draw=black!70, fill=black!4, align=center, text width=30mm, inner sep=4pt},
+  final/.style={rectangle, rounded corners=2pt, draw=black!85, thick, fill=rowhl!60, align=center, text width=32mm, inner sep=5pt},
+  advice/.style={rectangle, rounded corners=2pt, draw=black!50, dashed, fill=white, align=center, text width=66mm, inner sep=5pt},
+  arrow/.style={-{Stealth[length=2.4mm]}, black!70},
+  lab/.style={font=\scriptsize\itshape, fill=white, inner sep=1pt},
+]
+\node[question] (grid) {Data on a regular grid or sequence?};
+\node[answer, right=14mm of grid] (cnn) {CNN / RNN / Transformer\\ (\S~\ref{subsec:bp-when-not})};
+\node[question, below=of grid] (edges) {Edges known from physics?};
+\node[answer, right=14mm of edges] (four) {choose: set, complete, or learned\\ (\S~\ref{subsec:no-adjacency})};
+\node[answer, below=of edges] (impose) {impose the graph\\ (\S~\ref{subsec:no-adjacency})};
+\node[question, below=of impose] (msg) {Message must depend on edge or receiver features?};
+\node[final, below left=8mm and 2mm of msg] (sage) {\texttt{SAGEConv}\\ \scriptsize cheap, stable, convolutional};
+\node[final, below right=8mm and 2mm of msg] (mp) {full message passing\\ \scriptsize expressive, costlier};
+\node[advice, below=16mm of msg] (start) {whatever the path: start with the \textbf{sum} aggregator and two to three layers, and beat the Deep Set and summary-statistic baselines before trusting the graph};
+
+\draw[arrow] (grid) -- node[lab] {yes} (cnn);
+\draw[arrow] (grid) -- node[lab] {no} (edges);
+\draw[arrow] (edges) -- node[lab] {no} (four);
+\draw[arrow] (edges) -- node[lab] {yes} (impose);
+\draw[arrow] (four.south) to[out=-90, in=30] (msg.north east);
+\draw[arrow] (impose) -- (msg);
+\draw[arrow] (msg) -- node[lab] {no} (sage);
+\draw[arrow] (msg) -- node[lab] {yes} (mp);
+\draw[arrow, black!50, dashed] (sage.south) to[out=-90, in=170] (start.west);
+\draw[arrow, black!50, dashed] (mp.south) to[out=-90, in=10] (start.east);
+\end{tikzpicture}

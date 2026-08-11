@@ -1,0 +1,36 @@
+% applications_table.tex -- survey summary table for Sect. 1.5 (input by main.tex)
+% One glance answers: has anyone done X, on what graph, with what layer, on real data?
+\begin{sidewaystable}
+\caption{The astro-GNN literature at a glance, organised by subfield and task. \emph{Level} gives the prediction type of \S~\ref{subsec:tasks}; \emph{graph} names the construction of \S~\ref{subsec:no-adjacency}; \emph{real data} marks analyses that include real observations (the minority, see \S~\ref{sec:frontier}). References are representative, not exhaustive.}
+\label{tab:applications}
+\footnotesize
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{p{2.55cm} p{4.1cm} p{1.35cm} p{2.6cm} p{2.2cm} p{0.95cm} p{5.6cm}}
+\hline\noalign{\smallskip}
+Subfield & Task & Level & Graph & Layer & Real data & Representative references \\
+\noalign{\smallskip}\hline\noalign{\smallskip}
+Cosmology \& LSS & $\Omega_m$, $\sigma_8$ from halo/galaxy catalogues & graph & radius (linking length) & message passing & -- & \citet{Makinen2022_cosmicgraph_LSS, VillanuevaDomingo2022_cosmicgraph_clustering, deSanti2023_fieldlevel_LFI} \\
+ & cosmological parameters on survey data & graph & radius & message passing & yes & \citet{Lee2024_SDSS_domaingeneralization} \\
+ & continuous-field reconstruction from tracers & node & radius & message passing & -- & \citet{Kvasiuk2024_fieldreconstruction_GNN, Krywonos2026_GNNCNN_reconstructing_DM_from_galaxies} \\
+ & cosmic-web environment classification & node & Delaunay/proximity & convolutional & -- & \citet{Kololgi2025_cosmicweb_classification} \\
+ & multi-scale cosmology; benchmarks & graph & topological/multi-scale & mixed & -- & \citet{Lee2025_topological_cosmology, Huang2025_CosmoBench_benchmark} \\
+ & CMB, lensing, PNG, voids & mixed & sphere/proximity & mixed & -- & \citet{Adams2023_CMB_graphconv, Park2023_lensing_bayesianGNN, Jung2023_QuijotePNG_massfunction, Thiele2026_void_graphflow} \\
+\noalign{\smallskip}
+Galaxies \& halos & galaxy properties from merger trees & graph & tree (imposed) & \texttt{SAGEConv} & -- & \citet{Jespersen2022_mangrove, Chuang2024_mergertree_GNN} \\
+ & galaxy--halo connection from environment & node & radius & message passing & -- & \citet{Wu2023_galaxyenvironment_GNN, Wu2024_galaxyhalo_environment, Jespersen2026_environment_assembly} \\
+ & halo/cluster masses from neighbourhoods & node & radius & message passing & yes & \citet{VillanuevaDomingo2022_halomass_GNN, VillanuevaDomingo2023_MW_mass} \\
+ & cluster masses from X-ray profiles & graph & sequence-as-graph & attentional & yes & \citet{Iqbal2025_cluster_xray_GNN} \\
+ & intrinsic alignments (generative) & node & radius & E(3)-equivariant & -- & \citet{Jagvaral2022_intrinsicalignment_GNN} \\
+ & generative trees and environments & graph & tree/radius & mixed & -- & \citet{Tang2022_merger_normalizingflow, Nguyen2024_FLORAH_assembly, Nguyen2025_mergertree_generative, Nguyen2026_DREAMS_diffusion} \\
+\noalign{\smallskip}
+Milky Way \& stars & chemical/kinematic tagging & node & complete/learned & attentional & yes & \citet{Spina2025_chemicaltagging_GAT, Berni2025_MWhalo_substructure} \\
+ & dwarf-galaxy dark-matter profiles & graph & k-NN over stars & message passing & yes & \citet{Nguyen2023_dwarf_densityprofile, Nguyen2025_dwarf_GraphNPE, Nguyen2026graphNPE_applied} \\
+\noalign{\smallskip}
+Dynamics & force laws and masses by symbolic regression & edge & complete & message passing & yes & \citet{Cranmer2020_symbolicregression_inductivebias, Lemos2023_orbitalmechanics_symbolic} \\
+\noalign{\smallskip}
+Instruments & fibre assignment, resource allocation & node & conflict graph (imposed) & message passing & yes & \citet{Cranmer2021_resourceallocation_unsupervised, Wang2022_spectroscopy_resourceallocation, Sun2026_fiberassign_GNN} \\
+ & neutrino-event reconstruction & graph & k-NN over hits (causal) & mixed & yes & \citet{Choma2018_IceCube_classification, Abbasi2022_IceCube_lowenergy, Sogaard2023_graphnet_neutrino, Soldin2025_IceCube_GCN} \\
+ & cosmic rays, interferometry & graph & detector geometry & mixed & yes & \citet{Ferriere2025_GRAND_cosmicray, Rodriguez2025_Auger_photon, Kannan2025_interferometer_GNN} \\
+\noalign{\smallskip}\hline
+\end{tabular}
+\end{sidewaystable}

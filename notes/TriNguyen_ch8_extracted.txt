@@ -1,0 +1,1559 @@
+
+
+8. Graph Neural Networks · Deep Learning for Astrophysics
+
+ Contents
+
+NASA Cosmic Origins · AI/ML STIG
+
+# Deep Learning for Astrophysics
+
+Textbook Edition
+
+Part IFoundations
+01The Future of AI and the Mathematical and Physical Sciences02PyTorch and Autodifferentiation03JAX04Inductive Biases
+
+Part IIDeep Learning Architectures
+05Convolutional Neural Networks06Recurrent Neural Networks07Transformers08Graph Neural Networks09Equivariant Neural Networks I10Equivariant Neural Networks II
+
+Part IIIGenerative Models & Inference
+11Normalizing Flows12Diffusion Models13Flow Matching14Simulation-Based Inference
+
+Part IVReinforcement Learning
+15Reinforcement Learning I16Reinforcement Learning II
+
+Part VLarge Language Models & Agents
+17LLM API Basics18RAG & Function Tools19Model Context Protocol20LLM as Agent
+
+Part VIAI, Science & Society
+21From Text to Spaceship22AI and Scientific Publishing23Understanding in AI-Laden Science
+
+Part II · Deep Learning ArchitecturesChapter 8
+
+# Graph Neural Networks
+
+ Based on the lecture by Tri Nguyen
+ ·Northwestern / CIERA
+ ·Interactive notebook
+
+ ▶ Watch the lecture
+
+Learning Objectives
+
+- Understand the mathematical foundation of graphs (nodes, edges, adjacency matrices).
+
+- Explain the concept of message passing and how Graph Neural Networks (GNNs) learn representations.
+
+- Differentiate between Graph Convolutional Networks (GCNs) and Graph Attention Networks (GATs).
+
+- Implement transductive node classification on a single large graph (Cora citation network).
+
+- Construct graphs from point-cloud data using $k$ -nearest neighbors.
+
+- Implement inductive graph regression to infer dark matter subhalo properties from stellar streams.
+
+## Introduction
+
+In Chapter 7, we explored Transformers and how they process sequences using self-attention. We saw how an untrained model producing pure, random character noise could learn an astonishing amount of structure—capitalization, line breaks, and actual English vocabulary—simply by predicting the next character. Self-attention acts as a learned, data-dependent mixing operator over a sequence of tokens. But what happens when our data does not fit neatly into a sequence or a grid? 
+
+Images live on a rigid 2D grid, which makes Convolutional Neural Networks (CNNs) highly effective. Time series live on a 1D line, perfect for Recurrent Neural Networks (RNNs). But the universe rarely organizes itself into perfect grids. Think about a stellar stream—a tidal remnant of a dwarf galaxy or globular cluster torn apart by the Milky Way, existing as a scattered point cloud of stars in 6D phase space. As these stellar streams orbit the host galaxy, they can be perturbed by encounters with dark matter subhalos. These perturbations leave imprints on the stream's structure, such as gaps, spurs, and density variations, which can be analyzed to infer properties of the dark matter subhalos.
+
+These structures are best represented as graphs. A graph is one of the most flexible data structures in mathematics. If we have a set of objects and a relationship between them, we have a graph. Graph Neural Networks (GNNs) are designed to work directly with graph-structured data and thus are a natural fit for tasks like node classification in citation networks. They leverage both the features of the nodes and the structure of the graph to make predictions, allowing them to capture relationships between nodes.
+
+In this chapter, we will learn how to build neural networks that operate natively on these complex geometries. We will start by understanding the mechanics of message passing, apply it to a classic benchmark (classifying academic papers), and finally tackle a real astrophysics problem: inferring the mass and velocity of invisible dark matter subhalos by looking at the gravitational wakes they leave in stellar streams.
+
+## The Anatomy of a Graph
+
+Let's be rigorous about our definitions. A graph is fully described by two sets:
+
+- Nodes (Vertices): The entities in our dataset $v \in V$ . These could be stars, galaxies, atoms, or scientific papers.
+
+- Edges (Links): The relationships between those entities $e \in E$ . These could be gravitational interactions, chemical bonds, or citations.
+
+Graphs can represent almost anything. A subway map is a graph where stations are nodes and the tracks are edges. The Facebook social network is a massive graph where users are nodes and friendships are edges—plot it, and we can literally trace the geographic population density of the United States just from the connectivity! In astrophysics, we often use HEALPix maps to represent the sky; each pixel is a node, and its adjacent pixels form edges, perfectly capturing the non-Euclidean spherical geometry of the celestial sphere.
+
+### The Adjacency Matrix
+
+While drawing circles and lines is great for human intuition, computers need matrices. We express the connections in a graph using an adjacency matrix, typically denoted as $A$ . 
+
+If we have $N$ nodes, $A$ is an $N \times N$ matrix. If node $i$ is connected to node $j$ , then $A_{ij} = 1$ . Otherwise, it is $0$ . 
+
+We might reasonably ask: "Are all connections symmetric?" Not necessarily. 
+
+- Undirected graphs: If galaxy A is merging with galaxy B, galaxy B is merging with galaxy A. The adjacency matrix is perfectly symmetric.
+
+- Directed graphs: If paper A cites paper B, paper B does not necessarily cite paper A. The adjacency matrix will be asymmetric.
+
+Graphs can also have self-loops (a node connected to itself, placing a $1$ on the diagonal of $A$ ) and features. Just as an image has RGB channels for each pixel, a graph can have:
+
+- Node features: Properties of the node (e.g., the 6D kinematics of a star, representing our input data $x$ ).
+
+- Edge features / weights: Properties of the connection (e.g., the physical distance between two stars).
+
+- Global (Macro) features: Properties of the entire graph itself, such as the total number of cycles or loops in a molecular graph.
+
+## How Graph Neural Networks Learn
+
+GNNs learn through a process called message passing. 
+
+Imagine we are at an astronomy conference. We want to update our knowledge about a specific topic. We go around and ask all our immediate collaborators (our neighbors in the graph) what they know. We aggregate their knowledge, combine it with our own, and update our understanding. In the next hour (the next layer of the network), we do it again. Because our collaborators just spoke to their collaborators, we are now indirectly receiving information from two steps away.
+
+Mathematically, the general message-passing update for a node $i$ at layer $l$ can be written as:
+
+ $h_i^{(l+1)} = \text{UPDATE}\left( h_i^{(l)}, \text{AGGREGATE}\left( \left\{ m_{ij}^{(l)} : j \in \mathcal{N}(i) \right\} \right) \right)$ 
+
+where $h_i^{(l)}$ is the hidden state of node $i$ , $\mathcal{N}(i)$ is the set of its neighbors, and $m_{ij}^{(l)}$ is the message sent from node $j$ to node $i$ . The $\text{AGGREGATE}$ function must be permutation-invariant (like a sum, mean, or max) because the neighbors have no inherent order. The $\text{UPDATE}$ function then combines the aggregated messages with the node's current state.
+
+If our graph has edge features (e.g., the physical distance or bond type), these can be processed by a separate neural network and concatenated to the node features during this message passing step. The exact way we aggregate these messages defines the specific type of GNN.
+
+### Graph Convolutional Networks (GCN)
+
+GCN is one of the foundational architectures for graph neural networks and works by aggregating features from neighboring nodes. The message passing operation in a GCN layer can be written in matrix form as:
+
+ $H^{(l+1)} = \sigma\left( \hat{D}^{-1/2} \hat{A} \hat{D}^{-1/2} H^{(l)} W^{(l)} \right)$ 
+
+where:
+
+- $H^{(l)}$ is the node feature matrix at layer $l$ (with $H^{(0)} = x$ , our input data).
+
+- $A$ is the adjacency matrix.
+
+- $\hat{A} = A + I$ is the adjacency matrix with added self-loops (the identity matrix $I$ ), ensuring a node's own features are included in the update.
+
+- $\hat{D}$ is the degree matrix of $\hat{A}$ (a diagonal matrix where $\hat{D}_{ii} = \sum_j \hat{A}_{ij}$ ).
+
+- $W^{(l)}$ is a learnable weight matrix (part of the model parameters $\theta$ ).
+
+- $\sigma$ is a non-linear activation function (e.g., ReLU).
+
+Why the $\hat{D}^{-1/2} \hat{A} \hat{D}^{-1/2}$ terms? This normalizes the aggregation by the number of neighbors. Without it, a highly connected node (say, a user with 1,000 friends on a social network) would completely dominate the gradient descent process simply by having a massive sum of features.
+
+For the full list of available GNN layers, refer to the PyG NN Modules documentation.
+
+### Graph Attention Networks (GAT)
+
+What if not all neighbors are equally important? Just as we saw in Chapter 7 with Transformers, a GAT uses an attention mechanism to weigh the importance of neighboring nodes when aggregating information, allowing the model to focus on the most relevant particles. It dynamically decides which connections matter most for the task at hand. The message passing operation in GAT is:
+
+ $h_i^{(l+1)} = \sigma\left( \sum_{j \in \mathcal{N}(i)} \alpha_{ij} W h_j^{(l)} \right)$ 
+
+where:
+
+- $h_i^{(l)}$ is the feature of node $i$ at layer $l$ .
+
+- $\mathcal{N}(i)$ is the set of neighboring nodes of node $i$ (including $i$ itself).
+
+- $\alpha_{ij}$ is the attention coefficient between nodes $i$ and $j$ .
+
+- $W$ is a learnable weight matrix (part of $\theta$ ).
+
+- $\sigma$ is a non-linear activation function (e.g., ReLU).
+
+GAT does not require explicit edge features, as the attention mechanism learns to weigh the importance of neighboring nodes based on their features alone. In fact, if we apply a GAT to a fully connected graph—where every node is connected to every other node—it is effectively equivalent to a Transformer!
+
+The attention coefficients $\alpha_{ij}$ are computed using a softmax over the neighbors:
+
+ $\alpha_{ij} = \text{softmax}_j \left( \text{LeakyReLU} \left( a^\top [W h_i^{(l)} \parallel W h_j^{(l)}] \right) \right)$ 
+
+which expands to:
+
+ $\alpha_{ij} = \frac{\exp\left(\mathrm{LeakyReLU}\left(a^\top [W h_i^{(l)} \parallel W h_j^{(l)}]\right)\right)}{\sum_{k \in \mathcal{N}(i)} \exp\left(\mathrm{LeakyReLU}\left(a^\top [W h_i^{(l)} \parallel W h_k^{(l)}]\right)\right)}$ 
+
+where $a$ is a learnable weight vector (also part of $\theta$ ) and $\parallel$ denotes concatenation.
+
+Pro Tip: The weight matrix $W$ for computing the attention coefficient is the same as the one used to transform the node features in the message passing step. This is a design choice in GAT. Other attention-based GNNs may use separate weight matrices for these two steps.
+
+### The Graph Laplacian and the Spectral Domain
+
+To truly understand what GNNs are doing mathematically, we must look at the Graph Laplacian, defined as $L = D - A$ . 
+
+The Laplacian measures the local variation or smoothness of a signal on the graph. Mathematically, it acts as a discrete second derivative. If we have a signal that is perfectly smooth across connected nodes, multiplying it by the Laplacian yields zero. If there are sharp fluctuations, the Laplacian highlights them.
+
+By decomposing the Laplacian into its eigenvectors and eigenvalues, we enter the spectral domain. These eigenvectors represent the fundamental modes or frequencies of the graph. Just as a CNN learns spatial frequencies on a regular grid, a GNN effectively learns to filter these spectral modes on an arbitrary, non-Euclidean structure.
+
+### A Taxonomy of GNN Tasks
+
+Depending on what we want to predict, GNN applications generally fall into a few categories:
+
+- Node-level tasks: Predicting properties of individual nodes (e.g., node classification, clustering).
+
+- Edge-level tasks: Predicting relationships, such as link prediction (will these two nodes connect?), edge classification (what type of interaction is this?), or graph reconstruction (inferring missing connections).
+
+- Graph-level tasks: Predicting global properties of the entire system (e.g., graph regression or graph generation).
+
+### Caveats: Over-smoothing and Over-squashing
+
+While powerful, GNNs have specific limitations. If we make a GNN too deep, we run into over-smoothing: after many layers of message passing, the node features smear together and become indistinguishable. Because of this, GNNs are typically limited to roughly 3–5 layers. Conversely, if nodes are too far apart in the graph, we face over-squashing: the loss of long-range dependencies across many edge jumps, as too much information is compressed into fixed-size vectors.
+
+## A First Application: Node Classification on the Cora Dataset
+
+Let's put this into practice. Our first task is node classification. 
+
+Imagine we have the Gaia catalog. We have billions of stars. Some of them have high-resolution radial velocities from ground-based follow-up, but most do not. Could we build a graph of these stars and use the known ones to predict the properties of the unknown ones?
+
+We will simulate this scenario using a popular benchmark dataset for graph-based learning tasks: the Cora citation network. 
+
+The task is transductive node classification: we train on a subset of labeled nodes and predict labels for the remaining nodes, all within the same graph. This differs from the streams example's inductive graph-level regression, where we train on multiple graphs and make predictions on new, unseen graphs.
+
+### Preparing the Data
+
+We will use torch_geometric (PyG), the industry standard library for GNNs. 
+
+Before we begin, a quick practical note on installing PyTorch Geometric. In our experience, installing PyTorch Geometric can sometimes be tricky due to compatibility issues. If we encounter problems, try installing the CPU-only version. Sometimes, torch_geometric and its dependencies will run into version conflicts with torch. We have found that installing torch with CUDA 12.1 (even if our CUDA version is higher) is the most reliable option, but this could depend on the system.
+
+ [1]Python
+
+ Copy
+
+```
+# Install PyTorch Geometric (uncomment and run if needed)
+# !pip install torch-geometric
+# !pip install pyg-lib torch-scatter torch-sparse torch-cluster torch-spline-conv -f https://data.pyg.org/whl/torch-$(python -c "import torch; print(torch.__version__)")+cpu.html
+```
+
+With the library installed, we can now import the necessary modules from PyTorch and PyTorch Geometric. These imports provide the foundational tensor operations and the specialized graph data structures we need to build our models.
+
+ [2]Python
+
+ Copy
+
+```
+import numpy as np
+import matplotlib.pyplot as plt
+import torch
+import torch.nn as nn
+
+# Set random seeds for reproducibility
+np.random.seed(42)
+torch.manual_seed(42)
+```
+
+```
+<torch._C.Generator at 0x127e9a390>
+```
+
+Let's load the Cora dataset and inspect its properties. In our textbook environment, the Cora dataset is bundled in resources/, so we point the loader straight at it. Unlike the point cloud data we will see later, the Cora dataset already comes as a graph:
+
+- Nodes: Each node represents a scientific paper (2708 papers total).
+
+- Edges: Edges represent citation links between papers (10556 edges).
+
+- Node Features: Each paper is described by a 1433-dimensional bag-of-words feature vector.
+
+- Labels: Each paper belongs to one of 7 research areas.
+
+ [3]Python
+
+ Copy
+
+```
+from torch_geometric.datasets import Planetoid
+
+# Load the Cora dataset
+dataset = Planetoid(root='../resources/cora_citation_graph', name='Cora')
+```
+
+To understand what we are working with, we can extract the single graph object from the dataset and examine its properties. This reveals the exact number of nodes, edges, and features, confirming that our entire citation network is encapsulated in one unified structure.
+
+ [4]Python
+
+ Copy
+
+```
+# Print out dataset properties
+print(f"Number of graphs: {len(dataset)}")
+print(f"Number of features: {dataset.num_features}")
+print(f"Number of classes: {dataset.num_classes}")
+
+data = dataset[0]
+print("\nGraph structure:")
+print(f" Number of nodes: {data.num_nodes}")
+print(f" Number of edges: {data.num_edges}")
+print(f" Node feature shape: {data.x.shape}")
+print(f" Edge index shape: {data.edge_index.shape}")
+print(f" Has isolated nodes: {data.has_isolated_nodes()}")
+print(f" Has self-loops: {data.has_self_loops()}")
+print(f" Is undirected: {data.is_undirected()}")
+```
+
+```
+Number of graphs: 1
+Number of features: 1433
+Number of classes: 7
+
+Graph structure:
+ Number of nodes: 2708
+ Number of edges: 10556
+ Node feature shape: torch.Size([2708, 1433])
+ Edge index shape: torch.Size([2, 10556])
+ Has isolated nodes: False
+ Has self-loops: False
+ Is undirected: True
+
+```
+
+Notice that the dataset contains exactly one large graph that contains all papers and their citation relationships. It is undirected, has no isolated nodes, and currently has no self-loops.
+
+In transductive learning, the training, validation, and test sets are created by splitting the nodes of the graph, specifically by masking the nodes.
+
+ [5]Python
+
+ Copy
+
+```
+# Examine the train/val/test split masks
+print(f"Training nodes: {data.train_mask.sum().item()}")
+print(f"Validation nodes: {data.val_mask.sum().item()}")
+print(f"Test nodes: {data.test_mask.sum().item()}")
+
+# Look at class distribution
+class_names = [
+ 'Case_Based', 'Genetic_Algorithms', 'Neural_Networks',
+ 'Probabilistic_Methods', 'Reinforcement_Learning', 'Rule_Learning', 'Theory'
+]
+labels = data.y.numpy()
+
+print("\nClass distribution:")
+for i, name in enumerate(class_names):
+ count = (labels == i).sum()
+ print(f" {name}: {count} papers")
+```
+
+```
+Training nodes: 140
+Validation nodes: 500
+Test nodes: 1000
+
+Class distribution:
+ Case_Based: 351 papers
+ Genetic_Algorithms: 217 papers
+ Neural_Networks: 418 papers
+ Probabilistic_Methods: 818 papers
+ Reinforcement_Learning: 426 papers
+ Rule_Learning: 298 papers
+ Theory: 180 papers
+
+```
+
+One of the biggest challenges in working with graph datasets, especially large ones, is visualizing them effectively. We will use networkx to plot a subset of 500 nodes. Because Cora nodes do not have an intrinsic position, we will use a spring layout algorithm that puts nodes in positions based on their connectivity.
+
+ [6]Python
+
+ Copy
+
+```
+import networkx as nx
+from torch_geometric.utils import to_networkx
+
+# Create a subgraph for visual clarity
+subset_size = 500
+subset_mask = torch.zeros(data.num_nodes, dtype=torch.bool)
+subset_mask[:subset_size] = True
+subset_edge_mask = (data.edge_index[0] < subset_size) & (data.edge_index[1] < subset_size)
+subset_edge_index = data.edge_index[:, subset_edge_mask]
+
+# Create networkx graph
+G = nx.Graph()
+G.add_nodes_from(range(subset_size))
+edges = subset_edge_index.t().numpy()
+G.add_edges_from(edges)
+
+fig, ax = plt.subplots(figsize=(8, 6))
+
+# Note that Cora nodes do not have an intrinsic position
+# We will use a spring layout for visualization, which puts nodes in positions based on their connectivity
+pos = nx.spring_layout(G, seed=42, k=0.2)
+
+# Color nodes by class
+node_colors = data.y[:subset_size].numpy()
+cmap = plt.get_cmap('plasma', dataset.num_classes)
+scatter = nx.draw_networkx_nodes(
+ G, pos, node_size=30, node_color=node_colors, cmap=cmap, alpha=0.8, ax=ax
+)
+nx.draw_networkx_edges(G, pos, alpha=0.1, ax=ax)
+
+plt.colorbar(scatter, ax=ax, label='Class')
+ax.set_title(f'Cora Citation Network (first {subset_size} nodes)', fontsize=16)
+ax.axis('off')
+plt.tight_layout()
+plt.show()
+```
+
+Even in this raw layout, we can see that papers of the same class (color) tend to cite each other and cluster together. Our GNN will exploit this structure.
+
+Let's look at how PyTorch Geometric stores this data under the hood.
+
+ [7]Python
+
+ Copy
+
+```
+# Print the data object to see its structure
+print("Data object structure:")
+print(data)
+print(f"\nNode features (x): {data.x.shape} - (num_nodes, num_features)")
+print(f"Edge index: {data.edge_index.shape} - (2, num_edges)")
+print(f"Labels (y): {data.y.shape} - (num_nodes,)")
+print(f"Train mask: {data.train_mask.shape} - boolean mask for training nodes")
+print(f"Val mask: {data.val_mask.shape} - boolean mask for validation nodes")
+print(f"Test mask: {data.test_mask.shape} - boolean mask for test nodes")
+```
+
+```
+Data object structure:
+Data(x=[2708, 1433], edge_index=[2, 10556], y=[2708], train_mask=[2708], val_mask=[2708], test_mask=[2708])
+
+Node features (x): torch.Size([2708, 1433]) - (num_nodes, num_features)
+Edge index: torch.Size([2, 10556]) - (2, num_edges)
+Labels (y): torch.Size([2708]) - (num_nodes,)
+Train mask: torch.Size([2708]) - boolean mask for training nodes
+Val mask: torch.Size([2708]) - boolean mask for validation nodes
+Test mask: torch.Size([2708]) - boolean mask for test nodes
+
+```
+
+The edge_index is crucial here. Instead of storing a massive $2708 \times 2708$ adjacency matrix $A$ (which would be mostly zeros and waste memory), PyG stores edges as a [2, num_edges] array. The first row is the source node, and the second row is the destination node.
+
+### Building the Model
+
+Now we build our GCN. We will use PyG's built-in GCNConv layers. Notice how similar this looks to building a standard PyTorch MLP, but our forward pass now requires both the node features x AND the edge_index to perform message passing. Unlike the streams example where we will use global pooling to get graph-level embeddings, here we directly use the final node embeddings for classification. Each node's output is a probability distribution over the 7 classes.
+
+ [8]Python
+
+ Copy
+
+```
+from torch_geometric.nn import GCNConv
+import torch.nn.functional as F
+
+class GCN(nn.Module):
+ """
+ Graph Convolutional Network for node classification.
+ """
+ def __init__(self, input_dim, hidden_dim, output_dim, num_layers=2, dropout=0.5):
+ super().__init__()
+ self.num_layers = num_layers
+ self.dropout = dropout
+
+ # GCN layers
+ self.convs = nn.ModuleList()
+ self.convs.append(GCNConv(input_dim, hidden_dim))
+ for _ in range(num_layers - 2):
+ self.convs.append(GCNConv(hidden_dim, hidden_dim))
+ self.convs.append(GCNConv(hidden_dim, output_dim))
+
+ def forward(self, data):
+ x, edge_index = data.x, data.edge_index
+
+ for conv in self.convs[:-1]:
+ x = conv(x, edge_index)
+ x = F.relu(x)
+ x = F.dropout(x, p=self.dropout, training=self.training)
+
+ # Final layer (no activation, no dropout)
+ x = self.convs[-1](x, edge_index)
+
+ return x
+```
+
+Having defined the architecture, we instantiate the model and set up our optimization strategy. We will use the Adam optimizer to update our weights $\theta$ and the standard Cross-Entropy loss $\mathcal{L}$ to penalize incorrect class predictions.
+
+ [9]Python
+
+ Copy
+
+```
+# Initialize the model
+model = GCN(
+ input_dim=dataset.num_features,
+ hidden_dim=64,
+ output_dim=dataset.num_classes,
+ num_layers=2,
+ dropout=0.5
+)
+print(model)
+
+# Verify output shape
+with torch.no_grad():
+ out = model(data)
+ print(f"\nOutput shape: {out.shape} (num_nodes, num_classes)")
+```
+
+```
+GCN(
+ (convs): ModuleList(
+ (0): GCNConv(1433, 64)
+ (1): GCNConv(64, 7)
+ )
+)
+
+Output shape: torch.Size([2708, 7]) (num_nodes, num_classes)
+
+```
+
+With our model and optimizer ready, we can move on to the training phase.
+
+### Training the Model
+
+Next, we define our training loop. Pay close attention to how the loss $\mathcal{L}$ is calculated: we pass the entire graph through the model, but we only compute the Cross-Entropy loss using the nodes where data.train_mask is True.
+
+ [10]Python
+
+ Copy
+
+```
+def train_node_classifier(model, data, epochs=200, lr=0.01, weight_decay=5e-4, device='cpu'):
+ """
+ Train the GNN for node classification.
+ """
+ device = torch.device(device)
+ model = model.to(device)
+ data = data.to(device)
+
+ optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+ criterion = nn.CrossEntropyLoss()
+
+ train_losses = []
+ train_accs = []
+ val_losses = []
+ val_accs = []
+
+ print(f"Training for {epochs} epochs...\n")
+
+ for epoch in range(epochs):
+ model.train()
+ optimizer.zero_grad()
+
+ out = model(data)
+ loss = criterion(out[data.train_mask], data.y[data.train_mask])
+ loss.backward()
+ optimizer.step()
+ train_losses.append(loss.item())
+
+ # Compute training accuracy
+ pred = out.argmax(dim=1)
+ train_correct = (pred[data.train_mask] == data.y[data.train_mask]).sum()
+ train_acc = train_correct / data.train_mask.sum()
+ train_accs.append(train_acc.item())
+
+ # Compute the validation accuracy at the end of each epoch
+ model.eval()
+ with torch.no_grad():
+ out = model(data)
+ pred = out.argmax(dim=1)
+
+ val_loss = criterion(out[data.val_mask], data.y[data.val_mask])
+ val_losses.append(val_loss.item())
+
+ val_correct = (pred[data.val_mask] == data.y[data.val_mask]).sum()
+ val_acc = val_correct / data.val_mask.sum()
+ val_accs.append(val_acc.item())
+
+ # Print progress periodically
+ if (epoch + 1) % 20 == 0:
+ print(
+ f"Epoch {epoch+1:3d}/{epochs} | Train Loss: {loss.item():.4f} | "
+ f"Train Acc: {train_acc:.4f} | Val Loss: {val_loss.item():.4f} | "
+ f"Val Acc: {val_acc:.4f}"
+ )
+
+ print("\nTraining complete!")
+ return train_losses, train_accs, val_losses, val_accs
+```
+
+Let's train the model. We set our device to use CUDA if available, falling back to MPS on Apple Silicon, and finally CPU.
+
+ [11]Python
+
+ Copy
+
+```
+# Train the model
+train_losses, train_accs, val_losses, val_accs = train_node_classifier(
+ model, data,
+ epochs=200,
+ lr=1e-3,
+ weight_decay=5e-4,
+ device='cpu'
+)
+```
+
+```
+Training for 200 epochs...
+
+```
+
+```
+Epoch 20/200 | Train Loss: 1.3310 | Train Acc: 0.9643 | Val Loss: 1.6164 | Val Acc: 0.7080
+
+```
+
+```
+Epoch 40/200 | Train Loss: 0.6807 | Train Acc: 0.9714 | Val Loss: 1.1864 | Val Acc: 0.7800
+
+```
+
+```
+Epoch 60/200 | Train Loss: 0.3345 | Train Acc: 0.9786 | Val Loss: 0.9392 | Val Acc: 0.7820
+
+```
+
+```
+Epoch 80/200 | Train Loss: 0.2017 | Train Acc: 0.9929 | Val Loss: 0.8331 | Val Acc: 0.7760
+
+```
+
+```
+Epoch 100/200 | Train Loss: 0.1379 | Train Acc: 1.0000 | Val Loss: 0.7830 | Val Acc: 0.7860
+
+```
+
+```
+Epoch 120/200 | Train Loss: 0.0890 | Train Acc: 1.0000 | Val Loss: 0.7555 | Val Acc: 0.7820
+
+```
+
+```
+Epoch 140/200 | Train Loss: 0.0675 | Train Acc: 1.0000 | Val Loss: 0.7449 | Val Acc: 0.7800
+
+```
+
+```
+Epoch 160/200 | Train Loss: 0.0614 | Train Acc: 1.0000 | Val Loss: 0.7360 | Val Acc: 0.7840
+
+```
+
+```
+Epoch 180/200 | Train Loss: 0.0495 | Train Acc: 1.0000 | Val Loss: 0.7236 | Val Acc: 0.7840
+Epoch 200/200 | Train Loss: 0.0362 | Train Acc: 1.0000 | Val Loss: 0.7237 | Val Acc: 0.7780
+
+Training complete!
+
+```
+
+With our hardware target established, we execute the training loop over a set number of epochs. Watch how the loss decreases and the training accuracy climbs as the message passing layers learn to aggregate the citation features effectively.
+
+ [12]Python
+
+ Copy
+
+```
+# Plot loss and accuracy curves
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+
+axes[0].plot(train_losses, label='Train Loss')
+axes[0].plot(val_losses, label='Validation Loss')
+axes[0].set_xlabel('Epoch', fontsize=14)
+axes[0].set_ylabel('Cross-Entropy Loss', fontsize=14)
+axes[0].set_title('Training Loss', fontsize=16)
+
+axes[1].plot(train_accs, label='Train Accuracy')
+axes[1].plot(val_accs, label='Validation Accuracy')
+axes[1].set_xlabel('Epoch', fontsize=14)
+axes[1].set_ylabel('Accuracy', fontsize=14)
+axes[1].set_title('Validation Accuracy', fontsize=16)
+
+axes[0].legend()
+axes[1].legend()
+
+plt.tight_layout()
+plt.show()
+```
+
+The loss steadily decreases, indicating that our GCN is successfully learning the node representations.
+
+### Evaluating the Results
+
+The model converges nicely. Let's evaluate it on the held-out test mask to see how well it generalizes.
+
+ [13]Python
+
+ Copy
+
+```
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+
+# Evaluate on test set
+model.eval()
+with torch.no_grad():
+ out = model(data)
+ pred = out.argmax(dim=1)
+
+ # Test accuracy
+ test_correct = (pred[data.test_mask] == data.y[data.test_mask]).sum()
+ test_acc = test_correct / data.test_mask.sum()
+ print(f"Test Accuracy: {test_acc:.4f}")
+
+ # Get predictions and labels for test set
+ test_pred = pred[data.test_mask].cpu().numpy()
+ test_true = data.y[data.test_mask].cpu().numpy()
+```
+
+```
+Test Accuracy: 0.8010
+
+```
+
+We apply this evaluation function to our held-out test mask to compute the final accuracy. This tells us how well our learned node representations generalize to papers the model was not explicitly trained on.
+
+ [14]Python
+
+ Copy
+
+```
+# Print classification report
+print("\nClassification Report:")
+print(classification_report(test_true, test_pred, target_names=class_names))
+```
+
+```
+Classification Report:
+ precision recall f1-score support
+
+ Case_Based 0.66 0.78 0.72 130
+ Genetic_Algorithms 0.70 0.87 0.77 91
+ Neural_Networks 0.86 0.91 0.89 144
+ Probabilistic_Methods 0.93 0.73 0.82 319
+Reinforcement_Learning 0.79 0.85 0.82 149
+ Rule_Learning 0.79 0.76 0.77 103
+ Theory 0.72 0.83 0.77 64
+
+ accuracy 0.80 1000
+ macro avg 0.78 0.82 0.79 1000
+ weighted avg 0.82 0.80 0.80 1000
+
+```
+
+A single accuracy score only tells part of the story, so we compute and plot a confusion matrix to visualize the specific classification errors. This allows us to see which research areas the model frequently mixes up.
+
+ [15]Python
+
+ Copy
+
+```
+# Plot confusion matrix
+cm = confusion_matrix(test_true, test_pred)
+
+fig, ax = plt.subplots(figsize=(8, 6))
+im = ax.imshow(cm, interpolation='nearest', cmap='Blues')
+ax.set_title('Confusion Matrix', fontsize=16)
+plt.colorbar(im, ax=ax)
+
+# Add labels
+tick_marks = np.arange(len(class_names))
+ax.set_xticks(tick_marks)
+ax.set_yticks(tick_marks)
+ax.set_xticklabels(class_names, rotation=45, ha='right', fontsize=10)
+ax.set_yticklabels(class_names, fontsize=10)
+
+# Add text annotations
+thresh = cm.max() / 2.
+for i in range(cm.shape[0]):
+ for j in range(cm.shape[1]):
+ ax.text(
+ j, i, format(cm[i, j], 'd'),
+ ha='center', va='center',
+ color='white' if cm[i, j] > thresh else 'black'
+ )
+
+ax.set_ylabel('True Label', fontsize=14)
+ax.set_xlabel('Predicted Label', fontsize=14)
+plt.tight_layout()
+plt.show()
+```
+
+The model achieves strong accuracy. Looking at the confusion matrix, we can see where it struggles—for instance, it occasionally confuses "Probabilistic Methods" with "Neural Networks", which makes sense given the overlap in those literatures.
+
+What did the GNN actually learn? Let's extract the hidden embeddings from the second-to-last layer of our network and project them down to 2D using t-SNE.
+
+ [16]Python
+
+ Copy
+
+```
+from sklearn.manifold import TSNE
+
+# Get embeddings from the second-to-last layer
+model.eval()
+with torch.no_grad():
+ x, edge_index = data.x, data.edge_index
+ for conv in model.convs[:-1]:
+ x = conv(x, edge_index)
+ x = F.relu(x)
+ embeddings = x.cpu().numpy()
+
+# Apply t-SNE
+print("Running t-SNE on node embeddings...")
+tsne = TSNE(n_components=2, random_state=42, perplexity=30)
+embeddings_2d = tsne.fit_transform(embeddings)
+
+# Plot t-SNE visualization
+fig, ax = plt.subplots(figsize=(8, 6))
+scatter = ax.scatter(
+ embeddings_2d[:, 0], embeddings_2d[:, 1],
+ c=data.y.numpy(), cmap='tab10', s=10, alpha=0.7
+)
+ax.set_xlabel('t-SNE 1', fontsize=14)
+ax.set_ylabel('t-SNE 2', fontsize=14)
+ax.set_title('t-SNE Visualization of Learned Node Embeddings', fontsize=16)
+
+# Add legend
+handles = [
+ plt.scatter([], [], c=plt.cm.tab10(i/10), s=50, label=class_names[i])
+ for i in range(len(class_names))
+]
+ax.legend(handles=handles, loc='best', fontsize=10)
+
+plt.tight_layout()
+plt.show()
+```
+
+```
+Running t-SNE on node embeddings...
+
+```
+
+```
+/var/folders/zg/v3tx69hd27z2jysr851rlt340000gn/T/ipykernel_7798/3764972312.py:29: UserWarning: *c* argument looks like a single numeric RGB or RGBA sequence, which should be avoided as value-mapping will have precedence in case its length matches with *x* & *y*. Please use the *color* keyword-argument or provide a 2D array with a single row if you intend to specify the same RGB or RGBA value for all points.
+ plt.scatter([], [], c=plt.cm.tab10(i/10), s=50, label=class_names[i])
+
+```
+
+This is the power of message passing. The GNN has pulled together papers of the same class into distinct, separable clusters in the embedding space, leveraging both the keyword features and the citation topology.
+
+## A Second Application: Inferring Dark Matter from Stellar Streams
+
+Now we move to a real astrophysics application: inductive graph regression.
+
+Stellar streams are point clouds in space, where the spatial relationships between particles are crucial for understanding their dynamics and interactions. GNNs are well-suited to this data structure because they can effectively model relationships and interactions between particles by:
+
+- Treating each particle as a graph node
+
+- Creating edges between nearby particles ( $k$ -nearest neighbors)
+
+- Using attention mechanisms to weight particle contributions
+
+Our task: Given the 6D phase-space coordinates $(x, y, z, v_x, v_y, v_z)$ of the stars in a perturbed stream, can we infer the mass ( $M_{sh}$ ) and the impact velocity ( $v_z$ ) of the invisible dark matter subhalo that hit it?
+
+### Preparing the Data
+
+First, we ensure the simulation data is available. The data ships with this chapter in the resources/ directory, so we load it directly. The data contains 10,000 simulated stellar streams, each with a perturbing subhalo with different parameters. The streams are generated using the StreamSculptor code from Nibauer et al. (2024).
+
+ [17]Python
+
+ Copy
+
+```
+# The stellar-stream simulation data ships with this chapter in ../resources/stellar_streams.pkl.
+# (A subset of the full dataset, sufficient to train and evaluate the GNN.)
+print('Using local stellar-stream data.')
+```
+
+```
+Using local stellar-stream data.
+
+```
+
+We define the file path to our simulation archive and verify its existence on disk. Confirming the file structure prevents unexpected errors when we attempt to parse the large arrays.
+
+ [18]Python
+
+ Copy
+
+```
+import pickle
+
+# Set random seeds for reproducibility
+np.random.seed(42)
+torch.manual_seed(42)
+```
+
+```
+<torch._C.Generator at 0x127e9a390>
+```
+
+Let's load the data and extract our targets. 
+
+Data Structure:
+
+- params_dict: A dictionary containing the simulation parameters for each stream:
+
+- M_sh: Subhalo mass in solar masses ( $\mathrm{M_\odot}$ ). Shape: (10000,)
+
+- vz_impact: Impact velocity in the $z$ direction (line-of-sight) in km/s. Shape: (10000,)
+
+- streams: The 6D phase-space coordinates of stream stars: $(x, y, z, v_x, v_y, v_z)$ 
+
+- Shape: (10000, N_stars, 6) where N_stars = 10000 for all streams in this dataset
+
+ [19]Python
+
+ Copy
+
+```
+# Load stellar-stream simulation data
+with open('../resources/stellar_streams.pkl', 'rb') as f:
+ data = pickle.load(f)
+
+params_dict = data['params_dict']
+streams = data['streams'] # Shape: (N_samples, N_particles, 6) corresponding to (x, y, z, vx, vy, vz)
+
+# params_dict contains M_sh (subhalo mass) and vz_impact (impact velocity along the line of sight)
+M_sh = params_dict['M_sh']
+vz_impact = params_dict['vz_impact']
+```
+
+Let's visualize what a dark matter impact actually does to a stream. We will plot three streams hit by subhalos of increasing mass.
+
+More physics context: The subhalo mass affects the strength of the perturbation on the stream. Higher mass subhalos create more pronounced features in the stream, such as larger gaps and more significant density variations. It is degenerate with the impact velocity, as a slower-moving subhalo can have a similar effect as a more massive one.
+
+ [20]Python
+
+ Copy
+
+```
+# Plot a few example streams to visualize the data distribution
+fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+
+# Pick a low, medium, and high mass interacting subhalo
+index_Msort = np.argsort(M_sh)
+example_indices = [index_Msort[0], index_Msort[len(index_Msort) // 2], index_Msort[-1]]
+
+for i, ax in enumerate(axes):
+ ax.plot(
+ streams[example_indices[i], :, 1], streams[example_indices[i], :, 2],
+ 'k.', markersize=1, alpha=0.5
+ )
+ ax.set_title(f'Stream Example {i+1}', fontsize=16)
+ ax.set_xlabel('y [kpc]', fontsize=16)
+ ax.set_ylabel('z [kpc]', fontsize=16)
+
+ # Print some info about the stream
+ text = f'M_sh: {M_sh[example_indices[i]]:.2e} Msun\nvz_impact: {vz_impact[example_indices[i]]:.2f} km/s'
+ ax.text(
+ 0.95, 0.05, text, transform=ax.transAxes, fontsize=14,
+ va='bottom', ha='right'
+ )
+
+plt.tight_layout()
+plt.show()
+```
+
+Unlike the Cora example, we are not given a graph structure for the data, so we will first need to convert the 6D phase-space data into graph structure. For simplicity, we will use a $k$ -Nearest Neighbors (k-NN) graph, where each node is connected to its $k$ -nearest neighbors. Another option for graph construction is a radius graph, where each node is connected to all nodes within a certain radius.
+
+For the full list of graph transformations, refer to the PyG Graph Transforms documentation.
+
+ [21]Python
+
+ Copy
+
+```
+import torch_geometric.transforms as T
+from torch_geometric.nn import knn_graph
+from torch_geometric.data import Data, Batch
+from torch_geometric.loader import DataLoader as PyGDataLoader
+```
+
+Before we build the graphs, we will subsample the streams. Why? To demonstrate the flexibility of the GNN approach. A GNN doesn't care if our graph has 90 nodes or 110 nodes. Because the shared weights operate on local neighborhoods, we can train a GNN on graphs of one size and deploy it on graphs of a completely different size.
+
+ [22]Python
+
+ Copy
+
+```
+# Subsample the streams to a random number of particles for each stream
+def subsample_streams(streams, N_min=90, N_max=110):
+ """Subsample the streams to a variable number of particles."""
+ N_samples, N_particles, N_features = streams.shape
+
+ streams_subsampled = []
+ for i in range(N_samples):
+ N_subsampled = np.random.randint(N_min, N_max + 1)
+ indices = np.random.choice(N_particles, N_subsampled, replace=False)
+ streams_subsampled.append(streams[i, indices, :])
+
+ return streams_subsampled
+
+# Subsample and prepare data
+streams_subsampled = subsample_streams(streams, N_min=90, N_max=110)
+```
+
+Now we construct the PyG Data objects. We normalize the features, apply the KNNGraph transform to build our edges, and package them into DataLoader objects. We also set num_workers=0 in our DataLoaders to ensure smooth headless execution on macOS.
+
+ [23]Python
+
+ Copy
+
+```
+def prepare_training_graph(
+ streams, params_dict, train_split=[0.8, 0.1, 0.1],
+ batch_size=32, k_neighbors=10
+):
+ """
+ Prepare training data for Graph NPE model.
+ Constructs graphs once during preprocessing rather than in training loop.
+ """
+ N_samples = len(streams)
+ N_features = streams[0].shape[1]
+
+ # Prepare parameters (log transform mass)
+ params = np.vstack((np.log10(params_dict['M_sh']), params_dict['vz_impact'])).T
+
+ # Split into train/val/test
+ N_train = int(train_split[0] * N_samples)
+ N_val = int(train_split[1] * N_samples)
+ N_test = N_samples - N_train - N_val
+
+ print(f'Number of training samples: {N_train}')
+ print(f'Number of validation samples: {N_val}')
+ print(f'Number of test samples: {N_test}')
+
+ # Compute normalization statistics on training data
+ X_train = np.concat([streams[i] for i in range(N_train)])
+ X_train_flat = X_train.reshape(-1, N_features)
+ X_loc = torch.tensor(X_train_flat.mean(0), dtype=torch.float32)
+ X_scale = torch.tensor(X_train_flat.std(0), dtype=torch.float32)
+
+ y_train_tensor = torch.tensor(params[:N_train], dtype=torch.float32)
+ y_min, y_max = y_train_tensor.min(0)[0], y_train_tensor.max(0)[0]
+ y_loc = (y_min + y_max) / 2
+ y_scale = (y_max - y_min) / 2
+
+ # Create graph transformation (set `loop=True` to include self-loops)
+ transform = T.KNNGraph(k=k_neighbors, loop=True)
+
+ # Create graphs for training data
+ print("Constructing graphs for training data...")
+ train_graphs = []
+ val_graphs = []
+ test_graphs = []
+
+ for i in range(N_samples):
+ stream, param = streams[i], params[i]
+
+ # Get particle data
+ particle_features = torch.tensor(stream, dtype=torch.float32)
+ pos = particle_features[:, :3]
+
+ # Normalize features using training statistics
+ particle_features_norm = (particle_features - X_loc) / X_scale
+
+ # Normalize parameters
+ y_norm = (torch.tensor(param, dtype=torch.float32) - y_loc) / y_scale
+ y_norm = y_norm.view(1, -1)
+
+ # Create PyG Data object
+ data = Data(
+ x=particle_features_norm,
+ y=y_norm,
+ pos=pos
+ )
+ data = transform(data)
+
+ if i < N_train:
+ train_graphs.append(data)
+ elif i < N_train + N_val:
+ val_graphs.append(data)
+ else:
+ test_graphs.append(data)
+
+ # Create DataLoaders
+ train_loader = PyGDataLoader(train_graphs, batch_size=batch_size, shuffle=True)
+ val_loader = PyGDataLoader(val_graphs, batch_size=batch_size, shuffle=False)
+ test_loader = PyGDataLoader(test_graphs, batch_size=batch_size, shuffle=False)
+
+ norm_dict = {'X_loc': X_loc, 'X_scale': X_scale, 'y_loc': y_loc, 'y_scale': y_scale}
+
+ print("Graph construction complete!\n")
+ return train_loader, val_loader, test_loader, norm_dict
+
+train_loader, val_loader, test_loader, norm_dict = prepare_training_graph(
+ streams_subsampled, params_dict, train_split=[0.8, 0.1, 0.1],
+ batch_size=32, k_neighbors=5
+)
+```
+
+```
+Number of training samples: 2000
+Number of validation samples: 250
+Number of test samples: 250
+Constructing graphs for training data...
+
+```
+
+```
+Graph construction complete!
+
+```
+
+Let's inspect a single batch from our DataLoader.
+
+ [24]Python
+
+ Copy
+
+```
+# Take an example batch from the validation loader
+example_batch = next(iter(val_loader))
+print(example_batch)
+```
+
+```
+DataBatch(x=[3284, 6], y=[32, 2], pos=[3284, 3], edge_index=[2, 16420], batch=[3284], ptr=[33])
+
+```
+
+PyTorch Geometric handles batching in a very clever way. Instead of padding graphs to the same size (which wastes memory), it concatenates all the graphs in a batch into one giant, disconnected "super-graph". 
+
+The example batch contains the following data:
+
+- x: Node features (6D phase-space coordinates). Shape: (N_stars, 6). This is the total number of stars in the batch (i.e. all stars from all streams in the batch concatenated together).
+
+- edge_index: Graph connectivity information. Shape: (2, N_edges).
+
+- y: Properties of the subhalos. Shape: (N_batch, 2).
+
+- ptr: Batch pointer indicating the start index of each stream in the batch. Shape: (N_batch + 1,). Node features of the $i$ -th stream in the batch is stored at x[ptr[i]:ptr[i+1]].
+
+- batch: Batch vector assigning each star to its corresponding stream. Shape: (N_stars,). Node features of the $i$ -th stream in the batch can also be accessed using x[batch == i].
+
+Let's visualize one of these k-NN graphs in position and velocity space.
+
+ [25]Python
+
+ Copy
+
+```
+# Plot example graph
+fig, axes = plt.subplots(2, 3, figsize=(15, 8))
+
+example_graph = example_batch[0]
+
+# Get node features and edges
+pos = example_graph.x[..., :3].numpy()
+vel = example_graph.x[..., 3:].numpy()
+
+# Plot positions
+axes[0, 0].scatter(pos[:, 0], pos[:, 1], c='k', s=1, alpha=1)
+axes[0, 1].scatter(pos[:, 1], pos[:, 2], c='k', s=1, alpha=1)
+axes[0, 2].scatter(pos[:, 0], pos[:, 2], c='k', s=1, alpha=1)
+
+# Plot velocities
+axes[1, 0].scatter(vel[:, 0], vel[:, 1], c='k', s=1, alpha=1)
+axes[1, 1].scatter(vel[:, 1], vel[:, 2], c='k', s=1, alpha=1)
+axes[1, 2].scatter(vel[:, 0], vel[:, 2], c='k', s=1, alpha=1)
+
+# Plot edges
+for i in range(example_graph.edge_index.shape[1]):
+ src = example_graph.edge_index[0, i].item()
+ dst = example_graph.edge_index[1, i].item()
+
+ # Position
+ axes[0, 0].plot(
+ [pos[src, 0], pos[dst, 0]], [pos[src, 1], pos[dst, 1]],
+ 'C0-', alpha=0.2, zorder=-1
+ )
+ axes[0, 1].plot(
+ [pos[src, 1], pos[dst, 1]], [pos[src, 2], pos[dst, 2]],
+ 'C0-', alpha=0.2, zorder=-1
+ )
+ axes[0, 2].plot(
+ [pos[src, 0], pos[dst, 0]], [pos[src, 2], pos[dst, 2]],
+ 'C0-', alpha=0.2, zorder=-1
+ )
+
+ # Velocity
+ axes[1, 0].plot(
+ [vel[src, 0], vel[dst, 0]], [vel[src, 1], vel[dst, 1]],
+ 'C1-', alpha=0.2, zorder=-1
+ )
+ axes[1, 1].plot(
+ [vel[src, 1], vel[dst, 1]], [vel[src, 2], vel[dst, 2]],
+ 'C1-', alpha=0.2, zorder=-1
+ )
+ axes[1, 2].plot(
+ [vel[src, 0], vel[dst, 0]], [vel[src, 2], vel[dst, 2]],
+ 'C1-', alpha=0.2, zorder=-1
+ )
+
+axes[0, 0].set_xlabel('x [normalized units]', fontsize=14)
+axes[0, 0].set_ylabel('y [normalized units]', fontsize=14)
+axes[0, 1].set_xlabel('y [normalized units]', fontsize=14)
+axes[0, 1].set_ylabel('z [normalized units]', fontsize=14)
+axes[0, 2].set_xlabel('x [normalized units]', fontsize=14)
+axes[0, 2].set_ylabel('z [normalized units]', fontsize=14)
+axes[1, 0].set_xlabel('vx [normalized units]', fontsize=14)
+axes[1, 0].set_ylabel('vy [normalized units]', fontsize=14)
+axes[1, 1].set_xlabel('vy [normalized units]', fontsize=14)
+axes[1, 1].set_ylabel('vz [normalized units]', fontsize=14)
+axes[1, 2].set_xlabel('vx [normalized units]', fontsize=14)
+axes[1, 2].set_ylabel('vz [normalized units]', fontsize=14)
+
+plt.tight_layout()
+```
+
+ [26]Python
+
+ Copy
+
+```
+from torch_geometric.nn import GATConv, global_mean_pool
+
+class GraphModel(nn.Module):
+ """
+ Graph model using Graph Attention Network (GAT) layers.
+ """
+ def __init__(self, input_dim, output_dim, hidden_size=64, num_layers=3, heads=4):
+ super().__init__()
+ self.input_dim = input_dim
+ self.output_dim = output_dim
+ self.hidden_size = hidden_size
+ self.num_layers = num_layers
+ self.heads = heads
+
+ # Initial projection
+ self.input_proj = nn.Linear(input_dim, hidden_size)
+
+ # GAT layers
+ self.gat_layers = nn.ModuleList()
+ for i in range(num_layers):
+ self.gat_layers.append(
+ GATConv(hidden_size, hidden_size // heads, heads=heads, concat=True)
+ )
+
+ # Final projection to embedding
+ self.output_proj = nn.Sequential(
+ nn.Linear(hidden_size, hidden_size),
+ nn.ReLU(),
+ nn.Linear(hidden_size, output_dim)
+ )
+
+ def forward(self, batch):
+ x = batch.x
+ edge_index = batch.edge_index
+
+ # Initial projection
+ x = self.input_proj(x)
+ x = torch.relu(x)
+
+ # Apply GAT layers
+ for gat_layer in self.gat_layers:
+ x = gat_layer(x, edge_index)
+ x = torch.relu(x)
+
+ # Global pooling to get graph-level embedding
+ x_pooled = global_mean_pool(x, batch.batch)
+
+ # Final projection
+ output = self.output_proj(x_pooled)
+
+ return output
+```
+
+With the architecture defined, we instantiate the GAT model and configure our optimizer. Because we are predicting continuous physical quantities—mass and velocity—we will use the Mean Squared Error (MSE) as our loss function $\mathcal{L}$ .
+
+ [27]Python
+
+ Copy
+
+```
+# Initialize the model
+model = GraphModel(input_dim=6, output_dim=2, hidden_size=64, num_layers=3, heads=4)
+print(model)
+
+# Briefly pass the example batch through the model to check everything works
+example_shape = model(example_batch).shape
+assert example_shape == (example_batch.num_graphs, 2), \
+ f"Output shape mismatch! {example_shape} vs {(example_batch.num_graphs, 2)}"
+```
+
+```
+GraphModel(
+ (input_proj): Linear(in_features=6, out_features=64, bias=True)
+ (gat_layers): ModuleList(
+ (0-2): 3 x GATConv(64, 16, heads=4)
+ )
+ (output_proj): Sequential(
+ (0): Linear(in_features=64, out_features=64, bias=True)
+ (1): ReLU()
+ (2): Linear(in_features=64, out_features=2, bias=True)
+ )
+)
+
+```
+
+Our regression model is now ready to be trained on the stellar stream graphs.
+
+### Training the Model
+
+Let's define our training loop. Since this is a regression task, we will use Mean Squared Error (MSE) loss $\mathcal{L}$ .
+
+ [28]Python
+
+ Copy
+
+```
+def train_model(model, train_loader, val_loader, epochs=50, lr=1e-3, device='cpu'):
+ """
+ Train the GNN given training and validation data loaders using MSE loss.
+ """
+ optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
+ device = torch.device(device)
+ model.to(device)
+ criterion = nn.MSELoss()
+
+ train_losses = []
+ val_losses = []
+ print(f"Training for {epochs} epochs...\n")
+
+ for epoch in range(epochs):
+ model.train()
+ epoch_loss = 0.0
+ n_batches = 0
+ for batch_data in train_loader:
+ optimizer.zero_grad()
+ y_true = batch_data.y.to(device)
+ y_pred = model(batch_data.to(device))
+ loss = criterion(y_pred, y_true)
+ loss.backward()
+ optimizer.step()
+
+ epoch_loss += loss.item()
+ n_batches += 1
+
+ avg_loss = epoch_loss / n_batches
+ train_losses.append(avg_loss)
+
+ # Compute the validation loss at the end of each epoch
+ model.eval()
+ val_epoch_loss = 0.0
+ n_val_batches = 0
+ with torch.no_grad():
+ for batch_data in val_loader:
+ y_true = batch_data.y.to(device)
+ y_pred = model(batch_data.to(device))
+ val_loss = criterion(y_pred, y_true)
+
+ val_epoch_loss += val_loss.item()
+ n_val_batches += 1
+ val_avg_loss = val_epoch_loss / n_val_batches
+ val_losses.append(val_avg_loss)
+
+ # Print progress periodically
+ if (epoch + 1) % 10 == 0 or epoch == 0:
+ print(f"Epoch {epoch+1:3d}/{epochs} | Train Loss: {avg_loss:.4f} | Val Loss: {val_avg_loss:.4f}")
+
+ print("\nTraining complete!")
+ return train_losses, val_losses
+```
+
+We train the model. We set our device to use CUDA if available, falling back to MPS on Apple Silicon, and finally CPU. We run for 10 epochs here for speed, but bump this to 50 for a production run to ensure full convergence.
+
+ [29]Python
+
+ Copy
+
+```
+# Train the model
+train_losses, val_losses = train_model(
+ model, train_loader, val_loader,
+ epochs=50,
+ lr=1e-4,
+ device='cpu'
+)
+```
+
+```
+Training for 50 epochs...
+
+```
+
+```
+Epoch 1/50 | Train Loss: 0.3208 | Val Loss: 0.2848
+
+```
+
+```
+Epoch 10/50 | Train Loss: 0.1509 | Val Loss: 0.1395
+
+```
+
+```
+Epoch 20/50 | Train Loss: 0.0948 | Val Loss: 0.0902
+
+```
+
+```
+Epoch 30/50 | Train Loss: 0.0747 | Val Loss: 0.0723
+
+```
+
+```
+Epoch 40/50 | Train Loss: 0.0657 | Val Loss: 0.0623
+
+```
+
+```
+Epoch 50/50 | Train Loss: 0.0586 | Val Loss: 0.0573
+
+Training complete!
+
+```
+
+Having moved our model and data to the appropriate hardware, we execute the training loop. We track the MSE loss over each epoch to ensure the network is successfully learning to map the stream geometries to the subhalo parameters.
+
+ [30]Python
+
+ Copy
+
+```
+# Plot training and validation loss
+fig, ax = plt.subplots(figsize=(6, 5))
+ax.plot(train_losses, label='Train Loss')
+ax.plot(val_losses, label='Validation Loss')
+ax.set_xlabel('Epoch', fontsize=16)
+ax.set_ylabel('MSE Loss', fontsize=16)
+ax.legend(fontsize=14)
+plt.show()
+```
+
+The training loss drops significantly over the epochs, indicating that the GAT is successfully extracting meaningful features from the point clouds.
+
+### Evaluating the Results
+
+Let's see how well our GNN recovered the dark matter subhalo properties on the unseen test set. We will un-normalize our predictions and calculate the $R^2$ score.
+
+ [31]Python
+
+ Copy
+
+```
+from sklearn.metrics import r2_score
+```
+
+To interpret these predictions physically, we must reverse the normalization applied during preprocessing. Transforming the outputs back to their original units allows us to compute meaningful metrics like the $R^2$ score.
+
+ [32]Python
+
+ Copy
+
+```
+# Evaluate on test set
+test_predictions = []
+test_true = []
+model.eval()
+with torch.no_grad():
+ for batch_data in test_loader:
+ y_true = batch_data.y
+ y_pred = model(batch_data.to('cpu'))
+ test_predictions.append(y_pred.cpu().numpy())
+ test_true.append(y_true.cpu().numpy())
+test_predictions = np.vstack(test_predictions)
+test_true = np.vstack(test_true)
+
+# Unnormalize predictions and true values
+y_loc = norm_dict['y_loc'].numpy()
+y_scale = norm_dict['y_scale'].numpy()
+test_predictions_unnorm = test_predictions * y_scale + y_loc
+test_true_unnorm = test_true * y_scale + y_loc
+```
+
+Finally, we visualize the model's performance by plotting the predicted subhalo masses and impact velocities against their true simulated values. A tight alignment along the one-to-one diagonal indicates that our GNN has successfully captured the underlying physics.
+
+ [33]Python
+
+ Copy
+
+```
+# Calculate R2 score
+r2_Msh = r2_score(test_true_unnorm[:, 0], test_predictions_unnorm[:, 0])
+r2_vz = r2_score(test_true_unnorm[:, 1], test_predictions_unnorm[:, 1])
+
+print(f"Test R2 Score for log10(M_sh): {r2_Msh:.4f}")
+print(f"Test R2 Score for v_z: {r2_vz:.4f}")
+
+# Plot true vs predicted
+fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+
+# True vs Predicted for log10(M_sh)
+axes[0].scatter(
+ test_true_unnorm[:, 0], test_predictions_unnorm[:, 0],
+ c='k', s=5, alpha=0.5, zorder=2
+)
+axes[0].plot([6, 8], [6, 8], 'k--', lw=2, zorder=1)
+axes[0].set_xlim(6, 8)
+axes[0].set_ylim(6, 8)
+axes[0].set_xlabel(r'True $\log_{10}(M_{sh})$', fontsize=16)
+axes[0].set_ylabel(r'Predicted $\log_{10}(M_{sh})$', fontsize=16)
+
+# True vs Predicted for v_z
+axes[1].scatter(
+ test_true_unnorm[:, 1], test_predictions_unnorm[:, 1],
+ c='k', s=5, alpha=0.5, zorder=2
+)
+axes[1].plot([-50, 50], [-50, 50], 'k--', lw=2, zorder=1)
+axes[1].set_xlim(-50, 50)
+axes[1].set_ylim(-50, 50)
+axes[1].set_xlabel(r'True $v_z$ [km/s]', fontsize=16)
+axes[1].set_ylabel(r'Predicted $v_z$ [km/s]', fontsize=16)
+
+plt.tight_layout()
+plt.show()
+```
+
+```
+Test R2 Score for log10(M_sh): 0.9536
+Test R2 Score for v_z: 0.6771
+
+```
+
+We find that the model performs well in predicting subhalo masses and impact velocities from the stellar stream data. The predictions track the true values tightly along the diagonal. 
+
+We might wonder: can we track the gradients back to the input to see exactly which stars the model focused on, similar to how we interpret CNNs on images? Unlike CNNs, where gradients easily map back to input pixels, GNN interpretability is notoriously tricky. It is typically handled via ablation studies (e.g., manually removing the 'kink' in the stream to see how predictions change) or by directly examining the global pooled embeddings.
+
+The model does not give uncertainties, as we only trained on MSE loss. For scientific applications, techniques such as simulation-based inference (which we will explore in Chapter 14) or Bayesian neural networks can be used to estimate uncertainties. GNNs can then be adapted as the "feature extractor" or "embedding network" in these frameworks.
+
+As always, a reminder that as with any machine learning model, one should always stress-test the model on out-of-distribution data to ensure robustness.
+
+## Summary
+
+Let us recap what we have mastered in this chapter:
+
+- Graph Fundamentals: We learned how to represent non-Euclidean data using nodes, edges, and adjacency matrices.
+
+- Message Passing: We understand how GNNs learn by iteratively aggregating features from local neighborhoods.
+
+- GCN vs. GAT: We saw how Graph Convolutional Networks use fixed aggregations, while Graph Attention Networks learn which edges matter most.
+
+- Transductive vs. Inductive Learning: We successfully classified nodes within a single, static graph (Cora), and we built a model that generalizes to entirely new, unseen graphs (Stellar Streams).
+
+- Graph Construction: We learned how to turn an unstructured point cloud into a graph using $k$ -nearest neighbors.
+
+Graph Neural Networks are an incredibly natural fit for the physical sciences because the universe is fundamentally relational. Whether we are modeling the cosmic web, a molecule, or a constellation of satellites, GNNs allow us to bake the geometry of our problem directly into the architecture.
+
+In the next chapter, Chapter 9 — Equivariant Neural Networks, we will take this geometric deep learning a step further. We will formalize the concepts of invariance and equivariance, generalizing the symmetry themes we have seen in CNNs and GNNs. We will explore how to build networks that inherently respect the fundamental symmetries of physics—like the Affine and Euclidean groups—ensuring that our models do not have to relearn the laws of physics from scratch.
+
+## Practice Exercises
+
+- Change the Graph Edges: Try changing the graph edges in the Cora example. For example, add self-loops or make the graph directed. We might find the PyG utils module helpful: PyG Utils.
+
+- Experiment with Architectures: Swap the GCNConv layers for different GNN architectures and compare the performance. For example, GAT, GraphSAGE, and GIN all have very different message passing operations (and thus different inductive biases).
+
+- Explore Other Datasets: Play around with other node classification datasets (e.g., CiteSeer, PubMed).
+
+## Further Reading
+
+- PyTorch Geometric Contributors. (2024). PyTorch Geometric Documentation. PyG.
+
+- Kipf, T. N., & Welling, M. (2017). Semi-Supervised Classification with Graph Convolutional Networks. ICLR.
+
+- Veličković, P., et al. (2018). Graph Attention Networks. ICLR.
+
+- Xu, K., et al. (2019). How Powerful are Graph Neural Networks?. ICLR.
+
+- Hamilton, W. L., Ying, R., & Leskovec, J. (2017). Inductive Representation Learning on Large Graphs. NeurIPS.
+
+← PreviousTransformersNext →Equivariant Neural Networks I
+
+On this page
+IntroductionThe Anatomy of a GraphThe Adjacency MatrixHow Graph Neural Networks LearnGraph Convolutional Networks (GCN)Graph Attention Networks (GAT)The Graph Laplacian and the Spectral DomainA Taxonomy of GNN TasksCaveats: Over-smoothing and Over-squashingA First Application: Node Classification on the Cora DatasetPreparing the DataBuilding the ModelTraining the ModelEvaluating the ResultsA Second Application: Inferring Dark Matter from Stellar StreamsPreparing the DataTraining the ModelEvaluating the ResultsSummaryPractice ExercisesFurther Reading
+
