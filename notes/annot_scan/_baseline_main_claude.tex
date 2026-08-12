@@ -1,0 +1,670 @@
+\documentclass[graybox, envcountchap]{Template/svmult}
+
+
+\usepackage{natbib}
+\usepackage{tikz}            % decision flowchart in Best Practices
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning}
+% AAS journal-name macros (used by ADS BibTeX exports; undefined under svmult)
+\providecommand{\aj}{AJ}\providecommand{\apj}{ApJ}\providecommand{\aap}{A\&A}\providecommand{\mnras}{MNRAS}\providecommand{\pasj}{PASJ}\providecommand{\jcap}{JCAP}\providecommand{\prd}{Phys.~Rev.~D}\providecommand{\araa}{ARA\&A}\providecommand{\pasa}{PASA}
+\usepackage{mathptmx}        % selects Times Roman as basic font
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{color}
+\usepackage{colortbl}        % row colouring in tables
+\usepackage{rotating}        % sidewaystable for wide tables
+\definecolor{rowhl}{rgb}{0.95,0.92,0.84} % highlight tint (matches figures)
+\usepackage{helvet}          % selects Helvetica as sans-serif font
+\usepackage{courier}         % selects Courier as typewriter font
+\usepackage{dirtree}
+%\usepackage{type1cm}        % activate if the above 3 fonts are
+                             % not available on your system
+
+\usepackage{makeidx}        % allows index generation
+\usepackage{graphicx}        % standard LaTeX graphics tool
+                                            % when including figure files
+\usepackage{subfig}
+\usepackage{array}           % \arraybackslash for p{} columns in the table
+
+\usepackage{multicol}        % used for the two-column index
+\usepackage[bottom]{footmisc}% places footnotes at page bottom
+
+\usepackage{hyperref}        %for hyperlinks
+% \hypersetup{colorlinks=true,urlcolor=blue}
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
+
+\hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
+\usepackage[misc]{ifsym}
+
+\makeindex             % used for the subject index
+                       % please use the style svind.ist with
+                       % your makeindex program
+
+
+\begin{document}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+\title{Machine Learning Techniques for Astrophysics and Cosmology: Graph Neural Networks}
+% Use \titlerunning{Short Title} for an abbreviated version of
+% your contribution title if the original one is too long
+\titlerunning{Graph Neural Networks}
+\author{Christian Kragh Jespersen}
+\authorrunning{C. K. Jespersen}
+\institute{Christian Kragh Jespersen (\Letter) \at Department of Astrophysical Sciences, Princeton University, Princeton, NJ 08544, USA, \email{ckragh@princeton.edu}}
+\maketitle
+
+\abstract{Modern astrophysics will advance not through an explosion in data but through one in \textit{relations}, as we seldom make breakthroughs when we consider the object only in isolation. Instead we model and measure how it sits among its spatial and temporal neighbours: a galaxy in its environment, a halo in its history, a photon hit in a detector. Graphs encode exactly these relations, and Graph Neural Networks (GNNs) learn the functions that respect them. This chapter argues --- from first principles ---\footnote{All em-dashes in this work are organic and grass-fed.} that GNNs suit physics and physical data better than any rival: they fit the native geometry of the domain and the signal, they incorporate the symmetries and prior knowledge we already trust and have toiled to build, and they stay flexible enough to capture what we do not yet understand. GNNs' physically intuitive workings also render them more interpretable than other deep-learning architectures. We show how we can begin from the geometry of deep learning and build the graph and the graph neural network from the ground up, and how other architectures, like the convolutional network and the transformer, can be seen as special cases of one unified geometric blueprint. We survey applications across cosmology, galaxy formation, dynamics, and instrumentation; we distil a set of best practices, including when \emph{not} to reach for a graph; and we chart the frontier. Throughout, we will prioritise physical intuition and foundational principles to abstract mathematical machinery whenever possible. This follows the conviction that the knowledge of certain principles readily supplies the knowledge of certain facts.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{Introduction}
+\label{sec:intro}
+
+The history of physics is a story of geometry. Learning algorithms for the physical world must therefore be grounded in geometry.\footnote{Graph theory itself was born of a geometric puzzle: in 1736 Euler reduced the seven bridges of K\"onigsberg to nodes and edges and proved the stroll impossible. Three centuries on, the same abstraction describes the largest structures in the Universe.} From the ellipses of Kepler, through the invariances of Galileo, to the curved spacetime of Einstein, physics advances less by the collection of facts than by the discovery of the relations or symmetries that render those facts inevitable \citep{Noether1918_invariante_variationsprobleme}. A theory often earns our trust when it states the law in a form that no choice of coordinates, no relabelling, and no idle rotation can disturb.
+
+The natural sciences run, at heart, on relations. We build theories not of the isolated object but of the relation between objects, and the \textbf{graph} holds exactly this structure: objects become nodes, relations become edges. Such data permeate the natural sciences but especially astrophysics. The cosmic web threads galaxies into filaments, the kinematics and positions of Milky Way stars trace its evolution, and the IceCube neutrino observatory scatters its sensors through a cubic kilometre of ice. None of these lives on regular Euclidean grids, and to force one upon them invents a structure neither the data nor the physics they measure ever had.
+
+Graph Neural Networks (GNNs) are fundamentally \emph{geometric}\footnote{So are \emph{all} DL architectures and this is thus not very constraining, but GNNs are more expressly geometric and are typically formulated as being a foundational part of the modern family of geometric deep learning.} in nature, and they harness relational inductive biases for functions on arbitrary domains \citep{Bronstein2021_geometricDL_book}. They propagate information along the edges through parameterised message passing, and read out node-, edge-, and graph-level quantities. The idea long predates the recent enthusiasm: recursive and recurrent precursors reach back to the late 1990s \citep[see][and references therein]{Scarselli2009_GNN_model}, and the message-passing view that organises this chapter can likewise be absorbed into the convolutional network and the transformer as special cases \citep{Velickovic2022_messagepassing_up}.
+
+\begin{svgraybox}
+\textbf{Inductive bias.} The set of assumptions a learning algorithm carries before it meets data which then rank one solution above another when both fit the training set equally well. Weight sharing across pixels encodes translation symmetry in the CNN. Message passing along local neighbourhood edges encodes permutation symmetry and locality in the GNN. Distinct from inductive \emph{learning}, a mode of deployment defined in \S\ref{subsec:tasks}.
+\end{svgraybox}
+
+Excellent reviews already cover deep learning across astronomy at large \citep{HuertasCompany2023_dawes_review, Ting2026_deeplearning_review}. This review\footnote{As well as others in the series.} claims the complementary ground: the graph-specific, geometry-first treatment, from the blueprint that derives the architectures to the practice that makes them work on astrophysical data.
+
+This chapter proceeds in three movements: the geometry of learning and the blueprint that unifies its architectures (Sect.~\ref{sec:geometry}); the construction of the graph and the graph neural network from the ground up (Sects.~\ref{sec:graphs}--\ref{sec:gnn}); and the astrophysical applications (Sect.~\ref{sec:applications}), the best practices (Sect.~\ref{sec:bestpractices}), and the frontier (Sect.~\ref{sec:frontier}).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{Geometry and Deep Learning}
+\label{sec:geometry}
+
+\begin{quotation}
+\noindent\textit{``The knowledge of certain principles readily supplies the knowledge of certain facts.''} \\
+\noindent\hfill --- Claude Adrien Helv\'etius
+\end{quotation}
+
+This section makes a promise in Helv\'etius's spirit: master a few principles, and you can always \emph{derive}, rather than memorise, the right architecture for the problem before you.\footnote{The right architecture will often turn out to be a GNN.}
+The recipe takes only a few inputs, the problem you pose, the signal you aim to measure, the domains on which the data and signal live, and the symmetries to respect, and then returns the architecture to use. In the following sections, we show how to define the geometry of the data domain, that of the signal, introduce the necessary language of symmetry, and assemble the blueprint from which any modern architecture, CNN, Transformer, or GNN, all descend.
+
+\subsection{The geometries of the domain, the signal, and the model}
+\label{subsec:domain-signal}
+
+% this whole section needs to be rewritten a bit to also contain the model symmetry (the hypothesis class geometry from Bronstein)
+Any learning problem hides three geometries, that of the domain on which the data exist, that of the signal we wish to infer, and that of the model. A good model respects both the geometry of the domain and the signal. The geometry of the \emph{domain} comes first: the support on which the data live, a regular grid, a sphere, an irregular point cloud, a graph. The geometry of the \emph{signal} comes second: the structure of the field defined on that support, which carries its own symmetries, a scalar temperature, a vector velocity, a tensor shear, on whatever grid we happen to sample it.
+
+The lesson repeats throughout this chapter, so we state it once and plainly: choose the algorithm that respects the native geometry of both the domain and the signal. Impose no symmetry the data lack, and discard none they hold. A convolutional network presumes a regular grid; run it on a sphere or an irregular detector and you must first voxelise, and so invent a translational structure that does not exist, biasing the learning. Where the domain turns genuinely irregular, the graph offers not a stylistic preference but the only faithful description.
+
+\begin{figure}[p]
+\centering
+\hspace{-0.5cm}
+  % Answer: [trim={left bottom right top},clip]  
+\makebox[\linewidth][c]{\includegraphics[trim={0cm 4.1cm 0cm 1cm},clip, width=1.45\linewidth]{figures/domain_signal_model.png}}
+\caption{The three geometries of a learning problem. Each column adds one: the \emph{domain} where the data live, the \emph{signal} that exists upon it, and that of the \emph{model}. In a well-motivated case, the domain and signal \emph{imply} the model to be used. The rows fall from the abstract to two concrete cases. A galaxy sits on a pixel grid, whose translations and right-angle rotations a convolutional network inherits before a global pooling returns one rotation-invariant number, here the time since its last merger (but generalisable to most scalars). A halo catalogue forms an irregular point cloud whose only native symmetry is permutation; a linking length adds edges, and with them a bias towards local influences. We should choose the model whose symmetry respects the domain without excessive preprocessing, and is able to fully express the signal. At a minimum, it must not outlaw the true solution. At best, it matches it exactly.}
+\label{fig:domain_signal}
+\end{figure}
+
+\subsection{Symmetries, invariances, and equivariances}
+\label{subsec:symmetries}
+
+A \emph{symmetry} names a transformation that leaves some property untouched. The physicist meets symmetry early: the outcome of an experiment does not depend on where the bench stands, which way it faces, or when one runs it. The transformations that preserve a structure form a \emph{group}, and the way that group acts on our data, through linear maps we call \emph{representations}, dictates how a sensible model behaves. We keep the formal account, the group axioms and the representation theory, to Appendix~\ref{app:symmetries}; here two words suffice.
+
+A function stays \emph{invariant} when the group action leaves its output unchanged, and turns \emph{equivariant} when the output transforms in step with the input. The distinction draws the line between a scalar and a vector. Rotate a molecule: its total energy does not move (invariant), yet the force on each atom rotates with it (equivariant). The same split organises every prediction we make on a graph, and we return to it in Sect.~\ref{sec:gnn}. Invariance, note, amounts to the special case of equivariance in which the output carries the trivial representation.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.99\linewidth]{figures/white_3planets_annotated_energy_L_v.png}
+    \caption{\textbf{Invariances and equivariances in a physical system}. For a planetary system, vector quantities such as forces and velocities are \textit{equivariant} under rotations, meaning that they transform \textit{with} the rotation. Scalar quantities, such as energy or eccentricities, are \textit{invariant} to such transformations. Both respond to the same symmetry, but the distinction must always be kept in mind.}
+    \label{fig:rotation_demonstration}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.99\linewidth]{figures/permutation_inv_equiv.png}
+    \caption{\textbf{Invariance and equivariance under permutation}. A single cosmic graph --- halos joined by proximity, sized by mass, sorted two ways --- carries the same physics under either labelling, with the permutation $P$ that relates the two orderings written as a condensed permutation matrix. Reorder the nodes and the graph holds: a graph-level read-out such as the cosmic matter density $\Omega_M$ stays put (invariant), whilst the per-halo stellar masses $M_\star$ travel with the relabelling (equivariant). A graph neural network must honour both, so that each halo keeps its prediction whatever index it happens to wear.}
+    \label{fig:permutation_demonstration}
+\end{figure}
+
+\subsection{The geometric blueprint, and the convolutional network it implies}
+\label{subsec:blueprint}
+
+Almost every successful architecture amounts to one recipe, applied to a different domain and a different symmetry. Fix a domain $\Omega$ with symmetry group $G$ and assemble four kinds of block, after the blueprint of \citet{Bronstein2021_geometricDL_book}.
+
+\begin{svgraybox}
+\textbf{The Geometric Deep Learning blueprint.} From a domain $\Omega$ with symmetry group $G$, build:
+\begin{itemize}
+  \item a \textbf{$G$-equivariant layer} $B$, which mixes features in step with the symmetry, $B(g.x)=g.B(x)$;
+  \item a pointwise \textbf{non-linearity} $\sigma$;
+  \item an optional \textbf{local pooling (coarsening)} $P$, which shrinks the domain while it preserves the symmetry;
+  \item a \textbf{global pooling} $A$, which reads out a $G$-\emph{invariant} answer, $A(g.x)=A(x)$.
+\end{itemize}
+Stack the equivariant blocks (with non-linearities and optional coarsening) and finish with the invariant readout:
+\[
+  f \;=\; A \circ \sigma_J \circ B_J \circ P_{J-1}\circ\cdots\circ
+          P_1 \circ \sigma_1 \circ B_1 .
+\]
+\end{svgraybox}
+
+To see the recipe at work, derive the convolutional network. Since we often hold a firm intuition for the image and a shakier one for the graph, we let the familiar case lead. Demand three things \emph{a priori} of a model that acts on an image: translational \emph{equivariance} of its internal operations, scale separation, and translational \emph{invariance} of its output. The first demand decides everything. To insist that a local linear operation commute with every shift forces it to share weights across the image, that is, to become a \emph{convolution}. Scale separation, the premise that one may coarsen the signal without loss of what matters, justifies the interleaved \emph{pooling} that stacks these convolutions into a multiscale hierarchy; a dog stays a dog across scale and small deformation. Demand finally that the \emph{output} ignore position, and a single \emph{global pooling} delivers it. Reassembled, the parts make nothing but the familiar convolutional network, and exactly the blueprint above with the group set to translation.
+
+The same recipe, with a different group and a different notion of locality, yields the rest. The transformer becomes the blueprint on a fully connected graph, with attention as a learned, soft adjacency; the deep set becomes the blueprint on a set, the edgeless limit; the GNN becomes the blueprint on a graph, with the permutation group. We do not claim that a transformer simply \emph{is} a GNN: its positional encodings reinstate the order a permutation-equivariant layer discards, and that difference matters. We claim only that all three descend from one geometric principle. The graph earns its central place here not by fashion, but as the humble, general substrate from which the specialised successes fall out as corollaries.
+
+\subsection{Where Graph Neural Networks sit: the five Gs}
+\label{subsec:5gs}
+
+Geometric deep learning surveys five families of domain, the grid, the group, the graph, the geodesic, and the gauge, the ``five Gs'' \citep{Bronstein2021_geometricDL_book}; the graph forms but one province of that map. We mention the others only to place our subject within it, since the same blueprint specialises to each. Table~\ref{tab:gdl_architectures} collects the common architectures as instances of the blueprint, and marks the one this chapter pursues.
+
+\begin{table}[t]
+\caption{Common geometric architectures as instances of the geometric deep learning blueprint, after \citet{Bronstein2021_geometricDL_book} (trimmed). The highlighted row marks the GNN, the focus of this chapter.}
+\label{tab:gdl_architectures}
+\centering\footnotesize\setlength{\tabcolsep}{4pt}\renewcommand{\arraystretch}{1.5}
+\makebox[\linewidth][c]{%
+\begin{tabular}{llll>{\raggedright\arraybackslash}p{2.6cm}>{\raggedright\arraybackslash}p{2.8cm}}
+\hline\noalign{\smallskip}
+Architecture & Domain $\Omega$ & Symmetry $G$ & Locality & Example (non-astro) & Example (astronomy) \\
+\noalign{\smallskip}\svhline\noalign{\smallskip}
+CNN           & Grid           & Translation            & Local patch & Image classification \citep{Krizhevsky2012_alexnet_imagenet} & Galaxy morphology \citep{Dieleman2015_galaxymorphology_CNN} \\
+Spherical CNN & Sphere         & Rotation $SO(3)$       & Local cap   & Omnidirectional vision \citep{Cohen2018_spherical_CNN} & Weak-lensing maps \citep{Perraudin2019_deepsphere_spherical} \\
+\rowcolor{rowhl}
+GNN           & Graph          & Permutation $\Sigma_n$ & Neighbours  & Molecular properties \citep{Gilmer2017_MPNN_quantumchemistry} & Merger trees \citep{Jespersen2022_mangrove} \\
+Deep Sets     & Set            & Permutation $\Sigma_n$ & None        & Point clouds \citep{Zaheer2017_deepsets} & Cosmic voids \citep{Cranmer2021_histpool_deepsets} \\
+Transformer   & Complete graph & Permutation $\Sigma_n$ & All-to-all  & Language \citep{Vaswani2017_transformer_attention} & Light curves \citep{DonosoOliva2023_astromer_transformer} \\
+\noalign{\smallskip}\hline
+\end{tabular}%
+}
+\end{table}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{Graphs}
+\label{sec:graphs}
+
+Before we learn on a graph, we must say what a graph is, how we build one, and when we have no choice. This section takes the three in turn: it fixes the notation, it treats the adjacency matrix as the design choice it really represents, and it shows the astrophysical settings in which the graph turns inevitable. One point deserves emphasis at the outset: the graph picture earns its keep even when no neural network touches it. A graph path-likelihood, for one, extracts galaxy-formation information from the structure of the layered halo graph alone, with not a single learned weight in sight \citep{Yang2026_halograph_likelihood_not_gnn}.
+
+\subsection{Definitions and notation}
+\label{subsec:graph-defs}
+
+We define the graph as the triple $G=(V,E,U)$: $V=\{\mathbf{x}_i\}_{i=1:N^v}$ holds the node feature vectors\footnote{The node feature vector is often written $\mathbf{v}_i$ in the machine-learning literature, with $v$ for vertex. We keep $\mathbf{x}_i$ for the features and reserve $v$ for the node itself.}; $E=\{(\mathbf{e}_k,r_k,s_k)\}$ holds the edge feature vectors, each tied to a receiver $r_k$ and a sender $s_k$; and $U$ holds the global, graph-level feature vector, after the notation of \citet{Battaglia2018_relational_GN}. The connectivity also admits a compact description through the binary adjacency matrix $A$, with $A_{ij}=1$ to mark an edge. The real graph runs sparse, so in practice one stores not the dense $N\times N$ matrix but the \emph{edge index}, the two rows of sender and receiver indices, the form on which message passing actually runs.
+
+A graph runs directed or undirected, and the physics of the relation decides which. Directed edges suit the asymmetric, the causal, the time-ordered: a merger tree points forward in time, since to pass information backwards breaks causality. Undirected edges, a symmetric $A$, suit the symmetric relation: spatial proximity, a chemical bond, a pairwise gravitational pull. The \emph{neighbourhood} $\mathcal{N}(u)$ collects the nodes joined to $u$, and on it rests the whole notion of locality that follows.
+
+\begin{figure}[p]
+\centering
+\makebox[\linewidth][c]{\includegraphics[width=1.2\linewidth]{figures/graph_anatomy.png}}
+\caption{\textbf{The anatomy of a graph.} We write a graph as the triple $G=(V,E,U)$: a set of nodes $V$, each carrying a feature vector $\mathbf{x}_i$ (here a halo's mass, position and velocity); a set of edges $E$, each carrying a feature vector $\mathbf{e}_{ij}$ on the link between two nodes (here a separation and a relative velocity); and one global vector $U$ that speaks for the whole graph (here a pair of cosmological parameters, or statistics pooled across the nodes). \emph{Left}, an undirected graph: the relation runs both ways, as proximity, a bond, or a mutual pull, and the adjacency matrix stays symmetric, $A=A^{\top}$. \emph{Right}, a directed graph: the relation keeps a heading, as a merger, a flow, or the arrow of time, and the adjacency turns asymmetric, $A\neq A^{\top}$. The adjacency records who links to whom, with $A_{ij}=1$ for an edge and $0$ otherwise, its rows the sending index $i$ and its columns the receiving index $j$. Strictly, $A$ says nothing the edge set has not, since every edge already names its own sender and receiver and so hides the full connectivity inside $E$; the matrix merely rebuilds it. We keep $A$ regardless, for three reasons: it splits topology from content, the bare \emph{whether} of a connection from the richer \emph{what} the edge carries; it hands the graph to linear algebra, where the product $A\mathbf{X}$ gathers every node's neighbours at a stroke and the spectrum of $A$, or of its Laplacian, reveals communities, diffusion and scale; and it survives the common case of featureless edges, where the binary $A$ becomes the whole description. A \emph{self-loop} joins a node to itself, a single entry on the diagonal, $A_{ii}=1$ (node~1, right). It earns its place: in message passing it lets a node keep a share of its own state while it folds in its neighbours', the difference between a step through $A$ and a step through $A+I$, and without it round upon round of aggregation can wash a node's own identity away.}
+\label{fig:graph_anatomy}
+\end{figure}
+
+\subsection{Building the graph: the adjacency is a choice}
+\label{subsec:no-adjacency}
+
+Often the graph arrives ready-made; just as often it does not, and we must decide who connects to whom. Four standard moves answer the question. We may \emph{impose} an edge set from physical knowledge: at a neutrino observatory, connect only the hits whose separation stays consistent with a signal at or below the speed of light, a causal constraint no honest edge may violate. We may treat the data as a bare set and reach for a \emph{deep set}, the edgeless limit.\footnote{A set holds no native sense of locality: with no edges, no element lies near any other, so one cannot define a non-trivial coarsening on set structure alone. To coarsen, one must first infer a topology over the points, which precisely turns the set back into a graph.} We may assume a \emph{fully connected} graph, maximally expressive yet quadratic in cost, and so the natural home of the transformer. Or we may \emph{learn} the adjacency jointly with the task.
+
+For the physicist the first move deserves emphasis, again and again: we can often impose the graph from what we already know. The neutrino observatory makes the clean illustration, since one setting admits all four answers, to assume the light-cone structure, to learn the wiring, to treat the hits as a set, or to connect everything, and the literature has tried each \citep{Jespersen2021_icecube_bachelor, Bukhari2023_icecube_kaggle, Sogaard2023_graphnet_neutrino, Orsoe2025_graphnet2_library, Orsoe2026_nubench_benchmark}. To learn the latent structure rewards the ambition but, absent physical priors, defeats it: the space of possible adjacencies runs vast, and the inference couples a discrete object to every downstream gradient. The adjacency matrix, in short, makes a design choice, not a fixed input.
+
+\subsection{Astrophysical graphs: when the structure is inevitable}
+\label{subsec:inevitable}
+
+Sometimes the graph offers no choice at all. Three astrophysical cases make the point, mapped onto the domain, the signal, and the geometry of \S\ref{subsec:domain-signal}. The \emph{domain} turns inevitable at the IceCube Neutrino Observatory, whose sensors hang in an irregular, two-layer, hexagonal array through the ice; a convolutional network cannot touch it without a faked grid \citep{Choma2018_IceCube_classification, Abbasi2022_IceCube_lowenergy}. The \emph{signal} turns inevitable in the dark-matter merger tree, whose assembly history forms a graph by construction (Figure~\ref{fig:merger_tree}) \citep{Jespersen2022_mangrove, Chuang2024_mergertree_GNN}. The \emph{geometry} turns inevitable in the cosmic web, the point cloud of halos whose relevant structure lives in the proximity graph that threads them (Figure~\ref{fig:cosmic_web}) \citep{Makinen2022_cosmicgraph_LSS, VillanuevaDomingo2022_cosmicgraph_clustering}. In each, the graph alone refuses to lie about the data.
+
+\begin{figure}[t]
+\includegraphics[width=0.7\textwidth]{figures/full_tree2}
+\caption{A dark-matter halo merger tree: the assembly history forms a graph by construction, with nodes coloured by halo mass and edges that follow the flow of time.}
+\label{fig:merger_tree}
+\end{figure}
+
+% \begin{figure}[t]
+% \includegraphics[width=\textwidth]{figures/cosmic_graph1}
+% \caption{The cosmic web as a proximity graph over halos: the connectivity \emph{is} the geometry.}
+% \label{fig:cosmic_web}
+% \end{figure}
+
+\begin{figure}
+\makebox[\linewidth][c]{
+\includegraphics[width=1.25\textwidth]{figures/cosmic_web_three_panel_rot1_m10.png}}
+\caption{The cosmic web as a proximity graph over halos: the connectivity \emph{is} the geometry.}
+\label{fig:cosmic_web}
+\end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{Graph Neural Networks}
+\label{sec:gnn}
+
+A Graph Neural Network rests on one idea, repeated: pass the message along the edge, aggregate, update the node. The rest plays variation on that theme. We open with the anatomy of a single layer, and its disguise as a force law, then catalogue the common layers, the tasks they serve, and the modules from which we assemble any of the rest.
+
+\subsection{The anatomy of a message-passing layer}
+\label{subsec:message-passing}
+
+A single message-passing layer does three things, and the physicist has done all three before. Each node gathers the messages from its neighbours, a permutation-invariant aggregator sums them, and the node updates its state from its own features and from the aggregate:
+\[
+  \mathbf{h}_u \;=\; \phi\!\Big(\mathbf{x}_u,\ \bigoplus_{v\in\mathcal{N}(u)}
+        \psi(\mathbf{x}_u,\mathbf{x}_v,\mathbf{e}_{uv})\Big).
+\]
+At its simplest the layer reads $\mathbf{x}_i' = \mathbf{W}_1\mathbf{x}_i + \mathbf{W}_2\,\mathrm{mean}_{j\in\mathcal{N}(i)}\mathbf{x}_j$, the \texttt{SAGEConv} layer of \texttt{GraphSAGE} --- one name for the same object \citep{Hamilton2017_GraphSAGE_inductive, Jespersen2022_mangrove}. The form looks familiar for a reason: it hides a gravitational $N$-body update. Step the velocity of body $i$ forward, and the contributions of all other masses simply superpose:
+\[
+  \mathbf{v}_i^{t+1} \;=\; \mathbf{v}_i^{t}
+    + \Delta t \sum_{j\neq i}
+      \frac{G\,m_j(\mathbf{x}_j^{t}-\mathbf{x}_i^{t})}
+           {|\mathbf{x}_j^{t}-\mathbf{x}_i^{t}|^{3}} .
+\]
+The carry-forward term plays $\phi(\mathbf{x}_u,\cdot)$; the pairwise pull $G m_j(\mathbf{x}_j-\mathbf{x}_i)/r^3$ plays the edge message $\psi$; the sum over bodies plays the aggregator; the leading ``$+$'' plays the residual update. A GNN layer, then, amounts to a learnable, generalised force law plus a one-step integrator, which explains why message passing feels native to the physicist, and why the learned edge function so often reads back as a physical force \citep{Cranmer2019_symbolicphysics_GNN, Lemos2023_orbitalmechanics_symbolic}.
+
+\subsection{Common propagation layers}
+\label{subsec:flavours}
+
+The propagation layer comes in three canonical flavours \citep{Bronstein2021_geometricDL_book, Velickovic2022_messagepassing_up}, in order of rising expressivity and rising cost. With aggregator $\bigoplus$ and learnable maps $\psi,\phi$:
+\begin{align}
+\text{Convolutional:}\quad
+  \mathbf{h}_u &= \phi\!\Big(\mathbf{x}_u, \textstyle\bigoplus_{v\in\mathcal{N}_u}
+       c_{vu}\,\psi(\mathbf{x}_v)\Big), \\
+\text{Attentional:}\quad
+  \mathbf{h}_u &= \phi\!\Big(\mathbf{x}_u, \textstyle\bigoplus_{v\in\mathcal{N}_u}
+       a(\mathbf{x}_u,\mathbf{x}_v)\,\psi(\mathbf{x}_v)\Big), \\
+\text{Message passing:}\quad
+  \mathbf{h}_u &= \phi\!\Big(\mathbf{x}_u, \textstyle\bigoplus_{v\in\mathcal{N}_u}
+       \psi(\mathbf{x}_u,\mathbf{x}_v,\mathbf{e}_{uv})\Big).
+\end{align}
+The convolutional layer fixes the neighbour weight $c_{vu}$ (GCN; \citealp{Kipf2016_GCN_semisupervised}); the attentional layer learns a scalar weight $a(\mathbf{x}_u,\mathbf{x}_v)$ (GAT; \citealp{Velickovic2017_GAT_attention}); the message-passing layer computes a full vector message per edge (MPNN). To descend the list buys expressivity with parameters and compute (Figure~\ref{fig:flavours}).
+
+\emph{Expressivity} here means the range of functions the layer can represent, and the computer-science literature measures it against a classical yardstick, the Weisfeiler--Lehman (WL) test. The WL test attacks graph isomorphism, the question of whether two graphs share one wiring: give every node the same initial colour, repeatedly recolour each node by the multiset of its neighbours' colours, and compare the two colour histograms. Message passing performs exactly this refinement with learned functions in place of recolourings, so no message-passing network can tell apart two graphs the WL test cannot \citep{Xu2018_GIN_expressiveness}. The ceiling matters in computer science, where benchmark graphs often arrive featureless and regular, and topology is all there is to learn. It matters far less in astrophysics, where the node arrives loaded with masses, positions, and velocities: two haloes rarely share a feature vector, the colours differ from the start, and the pathological cases lose their bite. What survives the crossing is the corollary, that the sum aggregator preserves strictly more of the neighbourhood than the mean or the maximum, a preference \S\ref{subsec:bp-choose} turns into practice. The canonical $c_{vu}$ of the GCN normalises each message by the degrees of sender and receiver, a choice \S\ref{subsec:bp-choose} also weighs critically. The convolutional flavour carries a second pedigree besides: it descends from spectral graph convolution, which filters signals in the eigenbasis of the graph Laplacian much as an ordinary convolution filters in Fourier modes \citep{Bruna2013_spectral_networks, Defferrard2016_chebnet, Kipf2016_GCN_semisupervised}. Appendix~\ref{app:sym:scale} sketches that view. The message-passing picture suffices for everything that follows.
+
+\begin{figure}[p]
+% \centering
+\hspace{0.1cm}
+  % Answer: [trim={left bottom right top},clip]  
+\makebox[\linewidth][c]{\includegraphics[trim={-1cm 0cm 0cm 0.5cm},clip, width=1.25\linewidth]{figures/mp_flavours_figure_eq_bottom_inv_hierarchy.png}}
+\caption{The three main varieties of GNN layers. The convolutional layer is a special case of the attentional layer, which in turn is a special case of the full message passing layer. As we go from convolutional to full message passing, our layer becomes more expressive, but also harder and more expensive to train. We must always carefully consider this trade-off.}
+\label{fig:flavours}
+\end{figure}
+
+% \begin{figure}[t]
+% \includegraphics[width=\textwidth]{figures/bronstein_layer_overview}
+% \caption{TODO --- MAKE OWN VERSION (placeholder lifted from \citealp{Bronstein2021_geometricDL_book}; replace before publication). Dataflow for the three flavours of GNN layer, on the neighbourhood of node $b$. Left to right: convolutional, with $c_{uv}$ fixed; attentional, with $\alpha_{uv}=a(\mathbf{x}_u,\mathbf{x}_v)$; message passing, with $\mathbf{m}_{uv}=\psi(\mathbf{x}_u,\mathbf{x}_v)$.}
+% \label{fig:flavours}
+% \end{figure}
+
+Because the inner workings of GNNs inherently resemble both communication in a social network and interaction in a physical system, it is helpful to illustrate the workings of each this way.
+
+\textbf{GNN Flavours as Social Communication:} Imagine that we want to update our belief about a matter of politics to become better informed about current affairs. How would we go about doing so? Well, we want to take our current belief $x_i$, and pass it through some function $\phi$ and arrive at our improved opinion $h_i$. For the most informed opinion, this update is based not just on our current opinion, but also on the opinions of those around us --- neighbours in our social network. The way that others may choose to communicate that information to us can be captured as a specific GNN layer type.
+
+\begin{itemize}
+    \item \textbf{Convolutional}: This layer constructs messages from neighbouring nodes based purely on the current features of those nodes. This is equivalent to people around us expressing their opinions without regard to the relation between us, nor our own opinion.
+    \item \textbf{Attentional}: This layer also constructs messages from neighbouring nodes based purely on the current features of those nodes, \textit{but} with the possibility of scaling those messages based on both the edge features and the features of the receiving node. The message itself is not altered, only its magnitude. This is equivalent to people around us expressing their opinions without regard to the relation between us, but modulating the loudness of that opinion based on our relationship, and their knowledge of our current opinion.
+    \item \textbf{Full message-passing}: This layer constructs full messages taking in the features of sending and receiving nodes, as well as the edge features. This is equivalent to people around us changing the expression of their political opinion by taking into account the relation between us, and their knowledge of our current opinion. If they know that we disagree, they may choose to voice their opinion a little differently.
+\end{itemize}
+
+%now a similar list as above
+\textbf{GNN Flavours as Physical Laws:} Physical systems perform the same update: the state $x_i$ of an object passes through an interaction with its neighbours and arrives at the new state $h_i$. We must select the layer type according to which information the interaction may access. Here, we give some examples of physical systems carrying the structures of each layer:
+\begin{itemize}
+    \item \textbf{Convolutional}: Temporal graphs encoding halo growth (merger trees) neatly represent this layer. The descendant halo assembles as the unweighted sum over its progenitors --- fixed time sampling fixes every edge weight to unity, and the arrow of time bars the receiver from the message, since the descendant cannot influence progenitors that lie in its past. What merging does to spin, concentration, and assembly history hides inside $\phi$.
+    \item \textbf{Attentional}: Line absorption realises this layer. The radiation field arrives identical from some sending object, emitting without regard to the receiver, at every atom in the gas; each atom takes from the field only what its transition frequencies, oscillator strengths, and level populations permit. The message (original emission) stays untouched. The receiver and relation between sender and receiver modulate only the strength, exactly as the attention weight \textit{rescales} without \textit{rewriting}.
+    \item \textbf{Full message-passing}: The tidal interaction between two galaxies realises the full message-passing layer. The perturbation depends on the mass and structure of each galaxy, and on the orbit that connects them: the prograde encounter tears out a tidal tail where the retrograde encounter at the same separation leaves the disc nearly untouched. No scalar weight can ever rescale one outcome into the other; the message itself must change form.
+\end{itemize}
+
+These can optionally take in a third kind of input besides the node and edge features: a global feature vector, $U$. How a message-passing layer using all these kinds of inputs can be composed is shown in Figure \ref{fig:full_interaction_network} and discussed more deeply in \S\ref{subsec:compose}.
+
+\subsection{Prediction types}
+\label{subsec:tasks}
+
+A GNN affords every task one might want, across all three possible levels and two possible modes: the node, the edge, and the graph, in classification or regression mode (Figure~\ref{fig:tasks}). This adaptability makes GNNs, if not the ideal choice, then a reasonable choice for the vast majority of astrophysical tasks. On the cosmic web alone one may ask, at the graph level, whether the volume comes from a universe beyond $\Lambda$CDM, or what value $\Omega_m$ takes; at the node level, whether the galaxy in the halo runs quiescent, or what stellar mass it holds; at the edge level, whether two halos will merge, and in how long. The node- and edge-level outputs demand permutation \emph{equivariance} since the outputs must follow any permutations in the node orderings; the graph-level output demands permutation \emph{invariance}, since no relabelling of nodes should matter. The former is achieved with permutation-invariant aggregations when performing message passing, and the latter through a global permutation-invariant aggregation function over all nodes (see \S\ref{subsec:pooling}).
+
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figures/velickovic_tasks}
+\caption{GNNs can be used across all possible tasks: node-, edge-, and graph-level prediction, each in classification or regression. This versatility makes GNNs useful across most of astrophysics and astronomy. Figure reproduced after \citet{Velickovic2023_everythingconnected_review} with permission.}
+\label{fig:tasks}
+\end{figure}
+
+\begin{svgraybox}
+\textbf{Inductive vs.\ transductive learning.} Inductive learning\footnotemark{} trains on many graphs and deploys on new, unseen ones. Transductive learning trains and predicts within one fixed graph, to spread labels from the nodes that have them to the nodes that lack them.
+\end{svgraybox}
+\footnotetext{The term carries an unfortunate near-collision: an inductive \emph{bias} (Sect.~\ref{sec:intro}) is an assumption built into the model, while inductive \emph{learning} is a way of deploying one.}
+
+The same axis sorts the astrophysical literature, and the sorting is lopsided: nearly every application in \S\ref{sec:applications} is inductive, trained on many simulated merger trees, cosmic-web boxes, or detector events and deployed on new ones. The transductive setting still matters, and it looks like a familiar situation: one observed catalogue, partially labelled, as when a fraction of Gaia stars carries spectroscopic follow-up and the rest awaits. In the transductive setting the training and test nodes share edges by construction, so information leaks between the splits by default, a pitfall we return to in \S\ref{subsec:bp-diagnostics}.
+
+A note on training, kept short because none of it is specific to the GNN: the network trains end-to-end by gradient descent on any differentiable loss attached to the node-, edge-, or graph-level output, cross-entropy when the label is a class, mean squared error when it is a number. The loss also decides what the answer means. Swap the mean squared error for a Gaussian likelihood with a predicted variance, and the same network returns an error bar with every estimate. For the full posterior, the GNN serves as the trainable summariser inside a normalising flow or a simulation-based inference pipeline, as in the void-finding flow of \citet{Thiele2026_void_graphflow}. We flag this role here and leave the machinery to the dedicated review of \citet{Thiele2026_SBI_review}.
+
+\subsection{Composing edge, node, and global features into one layer}
+\label{subsec:compose}
+
+The three feature types, the edge $E$, the node $V$, and the global $U$, need not act in isolation; a full layer updates each in turn and lets information flow between them (Figure~\ref{fig:full_interaction_network}). One updates the edge from its endpoints, then the node from its aggregated edges, then the global feature from the whole. This order follows convention, not law, yet it composes the relational, the local, and the global into one permutation-respecting operation. The full structure is inspired by the \textit{Interaction Network} of \citet{Battaglia2016_interaction_network}, as generalised by \citet{Battaglia2018_relational_GN}.
+
+% NOTE (review): the phi/rho notation inside the reproduced panel differs from the psi/phi/oplus of Eqs. (1.1)--(1.3); consider harmonising in a future redraw.
+% NOTE (review): figure originates from Chuang et al. 2024 (CKJ co-author), itself closely inspired by the graph-network block of Battaglia et al. 2018; both now credited in the caption.
+\begin{figure}[t]
+\includegraphics[trim={0cm 14.65cm 0cm 0cm}, clip, width=\textwidth]{figures/workflow}
+\caption{How to compose the edge, the node, and the global feature into one graph-network layer: the edge updates from its endpoints, the node from its incident edges, and the global feature from the whole graph. Figure reproduced from \citet{Chuang2024_mergertree_GNN}, itself closely inspired by the graph-network block of \citet{Battaglia2018_relational_GN}.}
+\label{fig:full_interaction_network}
+\end{figure}
+
+\subsection{In- and equi-variant outputs through aggregations/poolings}
+\label{subsec:pooling}
+
+%% This section should contain two descriptions, one of the aggregation inside the message-passing layers, and the aggregation on the graph-level to do global tasks. 
+
+To turn the node features into a graph-level answer, we must pool them in a permutation-invariant way. The simplest pooling functions are \texttt{sum}, \texttt{average}, \texttt{maximum} or \texttt{minimum}.  Any of these functions taking over the nodes is order-independent, and so permutation-invariant.  Richer, distribution-aware pooling functions are rarer but they do exist: the differentiable histogram, for one, captures higher moments and stays interpretable in the language of the classical set summary \citep{Cranmer2021_histpool_deepsets}. Hierarchical pooling instead coarsens the graph in stages \citep{Ying2018_diffpool_pooling}. Because the learned maps act only on local neighbourhoods, one network runs on graphs of any size. The aggregator then decides whether the answer notices the difference. The sum grows with the node count and so retains it as signal, while the mean stays invariant to it, a trade-off \S\ref{subsec:bp-choose} weighs. In the end we can understand the pooling/aggregation function as any statistically meaningful summary of the neighbourhood or graph: minimum, maximum, mean, variance, and onward.
+
+It should be noted that any composition of the pooling functions itself constitutes a valid pooling function. Indeed, it may often be beneficial to do so. We can, for example, concatenate the sum, variance, maximum, and minimum across the latent variables, resulting in a $4 \cdot N_\mathrm{lat}$-dimensional vector that can then be used for further calculation. While this additional information about the latents is useful, one must caution that the increased dimensionality can complicate optimisation significantly. The result of the trade-off is not obvious \textit{a priori}, but if one is having trouble getting a GNN to optimise well, it is worth trying to shrink/expand the amount of different aggregation functions.     
+
+\subsection{Equivariant message passing: a case study in rotational structure}
+\label{subsec:equivariant-mp}
+
+Astrophysical signals are drenched in rotational structure: velocities, shears, spins, alignments. Permutation symmetry, which every GNN respects by construction, says nothing about these, and a network fed raw vectors happily learns functions that depend on the orientation of the simulation box. Rotations serve here as the case study, and the same three roads open for any continuous symmetry the signal carries. Three roads lead to a model that respects the rotation group, and the choice among them is a modelling decision, not a technicality.
+
+To build the symmetry into the architecture is the first road. The equivariant GNN of \citet{Satorras2021_EGNN_equivariant} keeps two ledgers per node, invariant scalars and equivariant vectors: messages are scalar functions of invariant quantities such as pairwise distances, and positions or velocities update only along difference vectors, each scaled by such a scalar. Every internal quantity then transforms correctly under E(3) by construction, and the guarantee holds at test time no matter what the network learned. The intrinsic-alignment model of \citet{Jagvaral2022_intrinsicalignment_GNN} runs on exactly this principle.
+
+To feed the network nothing but invariants is the second road. Replace raw positions by relative separations and raw velocities by their moduli, and any architecture becomes rotation-invariant through its diet rather than its anatomy; this is the route of the field-level inference of \citet{deSanti2023_fieldlevel_LFI}, and much of its cross-simulation robustness travels through that choice. The road costs nothing to implement and discards the directional information the task may or may not need.
+
+To augment the training data with random rotations is the third road: cheapest to set up, and the only one of the three that offers no guarantee, since the network merely sees many orientations and is asked to infer the lesson. When the symmetry is exact and matters, architecture beats diet beats augmentation in the strength of the promise, and the order reverses in the cost of implementation. When the symmetry is only approximate, a survey with a preferred line of sight, redshift-space distortions, a selection function, the soft-constraint route of \S\ref{subsec:bp-bias} reenters, and the strict architecture can even mislead. The equivariant family runs deeper than we need here, through tensor features and spherical harmonics, and \citet{Satorras2021_EGNN_equivariant} is the practical entry point for the astrophysical reader.
+
+\subsection{Scaling up by sampling the neighbourhood}
+\label{subsec:sampling}
+
+When the graph grows to millions of nodes, no one can pass every message everywhere all at once. Sampling controls the cost, by node, by layer, or by subgraph, and trades exactness for tractability and ease of optimisation. This may be a price worth paying when working at the scale of full galaxy surveys. 
+
+The computation that typically limits us is the total amount of computation needed for a single message-passing step. We can roughly think of the complexity of that computation as
+
+% $$
+% N_\mathrm{total} = N_\mathrm{latent, input} \cdot N_\mathrm{hidden} \cdot N_\mathrm{V} \cdot \langle N_\mathrm{E} \rangle 
+% $$
+
+\begin{equation}
+    N_\mathrm{total} = N_\mathrm{E} \underbrace{\left[ \left( 2N_\mathrm{lat} + N_\mathrm{lat,edge} \right) N_\mathrm{hid} + N_\mathrm{hid} N_\mathrm{lat,out} \right]}_{\mathrm{Message}} + N_\mathrm{V} \underbrace{\left[ \left( N_\mathrm{lat} + N_\mathrm{lat,out} \right) N_\mathrm{hid} + N_\mathrm{hid} N_\mathrm{lat,out} \right]}_{\mathrm{Update}},
+\end{equation}
+where $N_\mathrm{E}$ and $N_\mathrm{V}$ count the edges and nodes of the graph, $N_\mathrm{lat}$, $N_\mathrm{lat,edge}$, and $N_\mathrm{lat,out}$ give the dimensions of the node, edge, and output latent vectors, and $N_\mathrm{hid}$ gives the width of the hidden layer. Since edges outnumber nodes in most graphs (note that a merger tree is an exception, as trees are among the sparsest graphs), the message term dominates, leading to the general scaling:
+\begin{equation}
+    N_\mathrm{total} \sim N_\mathrm{E} \, N_\mathrm{lat} \, N_\mathrm{hid}.
+\end{equation}
+
+Since most often, the number of nodes stays fixed, while the number of edges per node, $\langle N_E\rangle$, often does change, it can be useful to rewrite this equation as
+\begin{equation}
+    N_\mathrm{total} \sim N_\mathrm{V} \langle N_\mathrm{E} \rangle \, N_\mathrm{lat} \, N_\mathrm{hid}.
+\end{equation}
+
+These are not forbidding numbers. A graph of $10^{5}$ nodes with $\langle N_\mathrm{E}\rangle \sim 100$, some thirty features per node and ten per edge, trains to convergence in under an hour on a single modern GPU (an NVIDIA H100).
+
+In general, two kinds of sampling are used in the astrophysical literature.
+
+\begin{itemize}
+    \item \textbf{Neighbourhood Sampling}: Samples a fixed number of local neighbours per layer, thus constraining $\langle N_E\rangle$ to some constant. This kind of sampling is used in the original \texttt{GraphSAGE} implementation to limit memory overhead during network training,\footnote{This layer was developed to train on the full graph of all users of a social-media platform, so some simplifications were required.} and turned off during inference.
+    % 
+    \item \textbf{Subgraph/Cluster Sampling}: Splits up the graph into a pre-fixed number of subgraphs, thus lowering $N_\mathrm{V}$. For example, \cite{Wu2023_galaxyenvironment_GNN} and \cite{Wu2024_galaxyhalo_environment}, investigating the dependence of galaxy property inference on environmental scale, used the \texttt{ClusterLoader} to make the training work as the environmental scale length (and thus the average number of edges) grows.
+\end{itemize}
+
+
+\subsection{The computational-modules zoo}
+\label{subsec:zoo}
+
+The literature offers dozens of propagation layers, samplers, and pooling operators; PyTorch Geometric alone lists some sixty-five. Their number need not intimidate. Once one grasps the few principles behind the common layers, any of the rest sits a short step away; once more, the knowledge of certain principles supplies the knowledge of certain facts. Figure~\ref{fig:modules} organises a useful astrophysical subset as a taxonomy of computational modules.
+
+\begin{figure}[t]
+\includegraphics[width=\textwidth]{figures/computational_modules2}
+\caption{A taxonomy of GNN computational modules, restricted to an astrophysically useful subset, with a representative reference on each leaf. Adapted in the spirit of \citet{Zhou2018_GNN_review}.}
+\label{fig:modules}
+\end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{Applications in Astrophysics and Cosmology}
+\label{sec:applications}
+
+GNNs have spread across astrophysics wherever the data refuse to be organised on neat grids --- a very common occurrence. Below, we will list and discuss the most prominent works using GNNs in astrophysics and cosmology. We organise the survey by subfield, and flag the divide between applications on real data (the minority) and the results that so far live only in simulation (the majority). The survey intends to illustrate and inspire; it does not exhaust.
+
+\input{figures/applications_table}
+
+\subsection{Cosmology and Large-Scale Structure}
+\label{subsec:app-cosmo}
+
+Cosmology supplies the largest graphs and point clouds that we as a field must work with. This is especially true of Large-Scale Structure (LSS), where large-scale surveys such as DESI now map out the precise position of $\sim10^{8}$ objects tracing the LSS. Inferring cosmological parameters from this enormous point cloud is usually done through N-point\footnote{With $N\in\{2,3\}$ and, to a lesser extent, $4$.} correlation functions that heavily compress the information content. Field-level inference methods are being developed to circumvent this limitation \citep{Bayer2023_MCLMC_fieldlevel}, but at present they still rely heavily on binning and smoothing. Traditional methods must furthermore apply significant scale-cuts, thus heavily discarding information, in order for the likelihoods to be analytically tractable. Simulation-based inference is now being increasingly applied to circumvent the need for explicit likelihoods \citep{Hahn2023_SimBIG_forwardmodel, Hahn2024_SimBIG_constraints, Ho2024_LtU_ILI}, although inherent degeneracies in the parameter space are still present \citep{Krishnaraj2026_transferlearning}. 
+A GNN naturally mitigates both problems. Training on simulations renders the likelihood implicit, and the graph framing enables field-level inference with almost no information discarded. A GNN infers cosmological parameters straight from the catalogue: the cosmic graph over halos and galaxies has been shown to constrain $\Omega_m$ and $\sigma_8$ better than any standard summary statistic \citep{Makinen2022_cosmicgraph_LSS, VillanuevaDomingo2022_cosmicgraph_clustering, Yang2023_haloclustering_graph}. These networks are furthermore more interpretable than other deep-learning methods \citep{Shao2023_omegam_universalequation}. More importantly, the robust heuristic that galaxy positions act as biased tracers of the LSS is embedded in the graphs, making field-level likelihood-free inference of cosmological parameters with GNNs robust to changes in galaxy formation physics \citep[][Figure~\ref{fig:desanti_robustness}]{deSanti2023_fieldlevel_LFI}. This also makes GNNs prime candidates for domain adaptation and robustness methods, since the modifications needed are small, a necessary criterion for domain adaptation to be successful \citep{Roncoli2023_domainadaptation_cosmology, Lee2024_SDSS_domaingeneralization}. Inference from these point clouds of discrete tracers can also provide improved maps to continuous fields like the baryon, dark matter, and electron density fields \citep{Kvasiuk2024_fieldreconstruction_GNN, Krywonos2026_GNNCNN_reconstructing_DM_from_galaxies}. GNNs are now also used to more efficiently and accurately sort the cosmic web into different environment types \citep{Kololgi2025_cosmicweb_classification}. 
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/deSanti23_cosmology_figure.png}
+\caption{Robust field-level inference across galaxy-formation models. The residual between the true and the inferred $\Omega_m$ for a GNN that reads only galaxy positions and line-of-sight velocities $(\mathbf{r}, v_z)$, trained on the Astrid simulations and tested on simulations it never saw: SWIFT-EAGLE (top) and the cosmic-variance sets of Astrid, SIMBA, IllustrisTNG, and Magneticum (bottom). The inference stays unbiased under every change of code and subgrid physics, the robustness that carefully invariantised inputs buy (\S\ref{subsec:equivariant-mp}, \S\ref{subsec:bp-bias}). Figure 2 of \citet{deSanti2023_fieldlevel_LFI}, reproduced from the published article at \href{https://iopscience.iop.org/article/10.3847/1538-4357/acd1e2}{doi:10.3847/1538-4357/acd1e2} (ApJ 952, 69), \copyright~2023 The Author(s), under the CC BY 4.0 licence.}
+\label{fig:desanti_robustness}
+\end{figure}
+
+One of the challenges facing GNNs is to capture both long- and short-range dependencies at the same time while remaining computationally efficient. \cite{Lee2025_topological_cosmology} recently introduced a \textbf{topological} version of the GNN that combines graphs on different scales to capture interactions across different scales without growing the graph to contain billions of edges. This approach then conserves computational efficiency while enabling multi-scale interaction.
+
+Many other cosmological tasks are now also being solved with graph-based methods. This includes CMB recovery \citep{Adams2023_CMB_graphconv}, Bayesian lensing inference \citep{Park2023_lensing_bayesianGNN}, inference of primordial non-Gaussianity \citep{Jung2023_QuijotePNG_massfunction}, and the hunt for cosmic voids with graph flows \citep{Thiele2026_void_graphflow}. These diverse tasks fill out the field. Given this wide applicability and promise, common benchmarks now appear \citep{Huang2025_CosmoBench_benchmark}.
+
+\subsection{Galaxy formation and the galaxy--halo connection}
+\label{subsec:app-galaxies}
+The bond between a galaxy and its dark-matter halo is deep and extends in both time and space. The temporal dimension is captured in \textbf{merger tree}s, and the spatial dimension is captured in local neighbourhood graphs. 
+
+The merger tree is naturally viewed as a graph \citep{Roper2020_MEGA_mergergraph}. Starting from the graph picture of the merger tree, \texttt{Mangrove} maps from the merger tree onto galaxy properties many orders of magnitude faster than a semi-analytic model (SAM) with similar accuracy to the original SAM \citep{Jespersen2022_mangrove}. Following this work, \cite{Chuang2024_mergertree_GNN} showed that these conclusions extend to the TNG magnetohydrodynamical simulations. In both the SAM and TNG, a GNN inferring galaxy properties from dark matter merger trees achieves precision on par with the noise level in the simulations --- the best possible performance.  
+
+The galaxy-halo-environment connection is also captured through the use of GNNs, since small-scale clustering (see \S\ref{subsec:app-cosmo}) is naturally captured through locally connected graphs like the one shown in Figure \ref{fig:cosmic_web}. These environment-GNNs can then learn accurate maps between baryonic galaxy properties and halo properties \citep{Wu2023_galaxyenvironment_GNN, Wu2024_galaxyhalo_environment}. Conventional environmental scalar summary statistics cannot make this mapping at the same level \citep{Wu2024_galaxyhalo_environment, Jespersen2026_environment_assembly}. Since these analyses must assume a linking length to define the scale of the environment, the performance of the GNN with this linking length also informs what environmental scales are most important for galaxy/halo evolution (Figure~\ref{fig:linking_length}).
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.72\textwidth]{figures/GNN-EBM-linking_length-comparison.pdf}
+\caption{What the environment graph knows that no scalar summary holds. The error (RMSE, dex) on predicted galaxy stellar mass as a function of the linking length $L$ that defines the environment graph. Explainable-boosting-machine baselines fed scalar environmental summaries, the overdensity and DisPerSE cosmic-web features, saturate near $L\sim2$--$3$ Mpc, while the GNN keeps extracting information from the geometry of the environment out to $L\sim10$ Mpc. Reproduced from \citet{Wu2024_galaxyhalo_environment}.}
+\label{fig:linking_length}
+\end{figure}
+
+These environment GNNs can then be used in observations to infer halo masses from observed neighbourhoods, a major advance for being able to infer individual halo properties from observations \citep{VillanuevaDomingo2022_halomass_GNN, VillanuevaDomingo2023_MW_mass, Garuda2024_GNN_reconstructing_halomass_from_galaxies, Larson2024_halomass_images}. Halo triaxiality can also be inferred with GNNs \citep{Delgado2025_cluster_triaxiality}. Other galaxy quantities determined by local galaxy clustering are also constrained with GNNs. Intrinsic alignments, a vector quantity, are naturally captured by E(3)-equivariant GNNs \citep{Jagvaral2022_intrinsicalignment_GNN}. 
+
+One particularly interesting use of a GNN came from \cite{Iqbal2025_cluster_xray_GNN}, who used the flexibility of the graph framing to train a single network to map from one-dimensional X-ray profiles to cluster masses. Different clusters have different numbers of observed points along their 1D X-ray profiles, which necessitates the flexibility. The graph neatly conserves the coupling and equilibrium between neighbouring bins, which is what is learned by the GNN and allows for robust mass inference. Crucially, having calibrated on hydrodynamical simulations, they apply the trained network to real galaxy clusters observed with XMM-Newton --- one of the few scientific (rather than instrumental) GNN analyses to reach real data at all. This use shows how the GNN and the Transformer are the same kind of machinery: a transformer amounts to an attentional GNN run on a fully connected graph \citep{Velickovic2023_everythingconnected_review}.
+
+One direction which is increasingly explored is \textit{generative modelling} of environments \citep{Nguyen2026_DREAMS_diffusion} and assembly histories \citep{Tang2022_merger_normalizingflow, Nguyen2024_FLORAH_assembly, Nguyen2025_mergertree_generative}.
+Although these generative models are impressive, it must be noted that the generation can only be done under significant assumptions to constrain the generative process, an issue that is common to all generative graph tasks and will be discussed further in \S\ref{sec:frontier}.
+
+\subsection{Stellar populations, the Milky Way, and dark-matter substructure}
+\label{subsec:app-stellar}
+Closer to home, there is also ample geometric structure to embed in our learning algorithms. GNNs can sort stars and probe the dark matter substructure from stellar kinematics and satellite populations. Chemical and kinematic tagging, a method to reunite stars with a common origin, can be recast as a graph problem with graph attention applied over abundances \citep{Spina2025_chemicaltagging_GAT}. Substructure in the Milky Way halo (streams/globular clusters/merger remnants) also emerges from applying GNNs to Gaia and APOGEE \citep{Berni2025_MWhalo_substructure}. Graph kernels can also be used for these tasks, although the Reader should note that using a graph kernel does not make the following network a GNN \citep{Ting2023_WLkernel_chemicaltagging}. The density profile of the dwarf galaxy, a direct handle on the nature and physics of dark matter, is directly inferable with graph networks applied to stellar kinematics \citep{Nguyen2023_dwarf_densityprofile, Nguyen2025_dwarf_GraphNPE}, a method that has recently been applied observationally \citep{Nguyen2026graphNPE_applied}.
+
+\subsection{Dynamics}
+\label{subsec:app-dynamics}
+
+Dynamics are governed by forces enacted by particles on one another within some background potential. The GNN turns the force-law analogy of message-passing presented in \S\ref{subsec:message-passing} literal. The interaction network naturally learns the equations of motion of the $N$-body system and, due to the inherent interpretability of vector messages as forces, symbolic regression hands messages back to us as a readable law \citep{Cranmer2019_symbolicphysics_GNN, Cranmer2020_symbolicregression_inductivebias, Lemos2023_orbitalmechanics_symbolic}. Related deep-learning machinery predicts the stability of the compact planetary system \citep{Cranmer2021_planetarystability_BNN}. The broader programme of the learned simulator on irregular meshes with voxels locally coupled to one another \citep{Pfaff2020_meshsim_GNN, SanchezGonzalez2020_GNS_physics} awaits its turn to be applied in astrophysics in earnest.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/solar_system_graph.jpg}
+\caption{The solar system embedded in a graph network. Thirty-one bodies --- the Sun, the planets, Pluto, and the largest moons --- form the nodes, drawn from thirty years of NASA HORIZONS ephemerides sampled every thirty minutes; the edges carry the pairwise gravitational interaction. Trained on these orbits, the interaction network learns the dynamics, and symbolic regression over its edge messages hands back Newton's law of gravitation together with the masses of the bodies. Reproduced from \citet{Lemos2023_orbitalmechanics_symbolic} under the CC BY 4.0 licence.}
+\label{fig:solar_system_graph}
+\end{figure}
+
+\subsection{Observation scheduling, detectors, and instrumentation}
+\label{subsec:app-instruments}
+% Start with combinatorial issue for observing strageties, the issue of how to do observation scheduling for multi-object observations, why it is a hard task both computationally and socially (start with Blanton+ 2003 which is the simplest possible reasonable approach)
+% It would be nice to discuss a little further than if we can classify the problem as NP hard or something formal, maybe look at the wang2022 paper a little further.
+% Then we move on to neutrino and cosmic ray detectors
+
+Point a telescope towards the sky, and the combinatorial and geometric trouble starts before the first photon. These complications are evident in all kinds of observational facilities, from multi-object spectrographs to particle detectors.
+
+A modern multi-object spectrograph carries hundreds to thousands of fibres\footnote{Instruments like SDSS \citep{York2000_SDSS_technical, Gunn2006_SDSS_telescope}, DESI \citep{DESI2016_experiment, DESI2022_instrument}, 4MOST \citep{deJong2019_4MOST}, WEAVE \citep{Dalton2014_WEAVE, Jin2024_WEAVE}, MOONS \citep{Cirasuolo2020_MOONS}, or PFS/SuNSS on Subaru \citep{Takada2014_PFS, 2024SPIE13096E..79J}.} across a single field, and a full survey comprises thousands of visits. For each visit an observer must decide which of far more candidates every fibre will target. The classical answer treats the decision as combinatorial optimisation and solves it by hand-built machinery. The classical SDSS \emph{tiling} algorithm nudges evenly spaced pointings to smooth the sampling of a clustered sky, then allocates fibres around the collisions \citep{Blanton2003_SDSS_tiling}; the Prime Focus Spectrograph recasts the same task as a minimum-cost network flow and solves it by linear programming \citep{Fabricius2020_PFS_netflow}; 4MOST assigns fibres probabilistically \citep{Tempel2020_fibre_assignment}. Each of these has been widely applied, but with significant drawbacks and suboptimality. These limitations persist despite the massive waste of observational resources and importance of reproducible selection functions for downstream science.
+
+The hardness is inherent to the task. At its core, fibre assignment is a \emph{maximum-weight independent set} on a conflict graph, one node per candidate fibre--target pair and one edge per collision \citep{Sun2026_fiberassign_GNN}, while the tiling that feeds it belongs to the set-cover family; both problems are NP-hard, and their exact optima are beyond reach for any reasonable modern survey \citep{GareyJohnson1979_intractability}. Heuristics and relaxations therefore rule, and they are brittle: change the pipeline, add a target, or reweight the science, and much of the tuning begins again.\footnote{A further difficulty resists mathematics outright. The weights encode a social contract --- whose science to favour on a telescope that can do a program targeting Milky Way, extragalactic, or cosmological targets --- and no optimiser adjudicates a value judgement; at best it lays the trade-offs bare for a human to arbitrate, but the value function must be human-defined.} Graph-based machine learning has begun to shoulder the combinatorial burden. \citet{Cranmer2021_resourceallocation_unsupervised} cast resource allocation as an unsupervised graph problem, and \citet{Wang2022_spectroscopy_resourceallocation} train a graph network to allocate fibres for multi-object spectroscopy. The fit is ideal: the conflict graph \emph{is} the problem, and a GNN amortises an optimisation the exact solver cannot afford. A network built on exactly this independent-set formulation, tested on real LAMOST fields, lands within a fraction of a percent of the optimum at survey speed \citep{Sun2026_fiberassign_GNN}, echoing the wider result that learned heuristics on graphs rival and outperform classical combinatorial solvers \citep{Dai2017_combinatorial_GNN}.
+
+Detectors rarely sit on perfect grids, and the neutrino telescope least of all --- making it ideally viewed as a graph. GNNs reconstruct IceCube events much faster and more precisely than the classical likelihood pipeline \citep{Choma2018_IceCube_classification, Jespersen2021_icecube_bachelor, Abbasi2022_IceCube_lowenergy, Soldin2025_IceCube_GCN}, an effort the \texttt{GraphNeT} library and its benchmarks now consolidate \citep{Bukhari2023_icecube_kaggle, Sogaard2023_graphnet_neutrino, Orsoe2025_graphnet2_library, Orsoe2026_nubench_benchmark} and carry to IceCube-Gen2 and IceAct with combined Transformer-GNN architectures \citep{Paul2025_IceAct_spectrum, VaraCarbonell2025_IceCubeGen2_ML}. Cosmic-ray observatories follow the same principles and thus yield to the same solutions \citep{Ferriere2025_GRAND_cosmicray, Rodriguez2025_Auger_photon}, and radio-interferometric calibration also yields to graph-based simulation-trained networks \citep{Kannan2025_interferometer_GNN}. Wherever the instrument forsakes the Euclidean grid, the graph solves the problem.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.7\textwidth]{figures/icecube_graph.png}
+\caption{Example event displays in the IceCube detector, the irregular sensor array that graph networks read natively. The size of spheres represents the amount of light observed in each DOM; larger spheres correspond to more light observed. The dotted black line represents the incoming neutrino, the black circle the cascade, and the solid black line the outgoing muon track. The size of the black round marker is proportional to the energy of the cascade at the vertex. The colour represents the timing of the hit, where the earliest hits are coloured in red and the latest hits in blue. Low energy events have significantly fewer hits. Reproduced from \citet{Abbasi2022_DeepCore_reconstruction} with kind permission of The European Physical Journal (EPJ).}
+\label{fig:icecube_graph}
+\end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{Best Practices}
+\label{sec:bestpractices}
+
+Successfully applying machine learning is not an exact science: it is closer to engineering or art. Hard-earned principles heuristically guide the development of GNNs and practice and experimentation decide what truly works. This section gathers some of these hard-won guidelines: what sequence of layers, when to leave the graph on the shelf, how to bake in what we already know, and how to read the GNN literature well. Treat these as starting points, not commandments.
+
+\subsection{Choosing an architecture}
+\label{subsec:bp-choose}
+
+For the first attempt, the message-passing layer and the \texttt{SAGEConv} layer almost always make a sound start; the attention layer tends to train unstably, and plain graph convolution (the \texttt{GCN} layer) often falls short on expressivity. Whether to start with message-passing or \texttt{SAGEConv} depends primarily on one thing --- whether messages must be modulated and changed based on edge or receiving node features. As an example, \texttt{SAGEConv} works well with the merger trees presented in \cite{Jespersen2022_mangrove}, since each edge encodes a uniform time step, and thus does not modulate any learned function, and temporal causality disallows messages based on receiving node features. In short, \texttt{SAGEConv} is the right choice when messages can accurately be based only on the sending node features. The computational efficiency of \texttt{SAGEConv} (see Figure \ref{fig:flavours}) also makes it a good initial choice. However, as follows from Figure \ref{fig:flavours}, the limited expressivity of \texttt{SAGEConv} (a convolutional-style layer) makes it suboptimal for many tasks. Message-passing is the most expressive of the three and so, when compute and data allow, a safe default for any task. The same expressivity makes it slow to optimise, so reserve it for when messages must depend on edge or receiving-node features, and let \texttt{SAGEConv} serve when they need not. As an example, for the neighbourhood graphs used for dynamics, galaxy-halo connection, or halo property inference, we cannot avoid the use of a more expressive layer. A GAT should technically also work for the majority of these tasks, but we have found it to be unstable for the tasks presented here, saving little compute relative to the full message-passing layer while giving up much of its expressivity. Whatever layer is chosen, it is wise to start with only two or three layers, since the deep GNN often struggles to optimise.
+
+For the neighbourhood aggregator function in the message passing layer, it is often wise to start with a sum function. A mean function is simply a normalised (and thus less informative) version of the sum, and is rarely the right inductive bias for physics.\footnote{It is, however, very useful for social networks.} The same judgement extends to the canonical GCN, which normalises each aggregated message by the degrees of the sending and receiving nodes \citep{Kipf2016_GCN_semisupervised}. On the social graph the normalisation makes sense: degree measures popularity, and popularity is often noise to normalise out for prediction tasks. On the proximity graph (like the cosmic web) degree measures local density, often a large part of the very signal the linking length was chosen to record. To normalise or not is therefore itself an inductive bias. When the normalisation carries physics, keep the sum. When a normalisation varies for reasons of sampling rather than physics, such as survey depth or subsampling, the mean restores comparability across graphs of very different size. The argument runs through graph size too: shared local weights let one network train on ninety nodes and deploy on many more, and when we expect no effect from the extra nodes themselves, the mean normalises the changing neighbourhood size away. The maximum function is often a good second choice after the sum. If neither the sum or max works well, we may always choose to apply a set of aggregation functions (e.g., \texttt{aggregate}$~\in~\{$\texttt{sum, max, mean, min, variance}$\}$) and simply concatenate them. While this is powerful and captures the distribution of messages well, beware the increased dimensionality of the latent space. If any global pooling functions are needed for graph level tasks, these same guidelines apply. Figure~\ref{fig:flowchart} condenses this subsection into a decision tree.
+
+\begin{figure}[t]
+\centering
+\input{figures/architecture_flowchart}
+\caption{From data to architecture: the decision tree of \S\ref{subsec:bp-choose}. Regularity sends the problem to the grid-native architectures. Irregular data pass through the graph-construction choice of \S\ref{subsec:no-adjacency}, then the layer choice splits on one question: must the message depend on the edge or the receiver? Whatever the path, start with the sum aggregator, two to three layers, and a baseline that must be beaten.}
+\label{fig:flowchart}
+\end{figure}
+
+
+\subsection{Embedding inductive biases}
+\label{subsec:bp-bias}
+
+A central tenet of geometric deep learning is: \textit{``do not learn what you already know.''}\footnote{Said countless times by Professor Peter Melchior.} Our models learn faster, cheaper, and more robustly when we embed prior structure we trust: through the symmetries we build in, and through the graph we construct, with its resolution, locality, or causality \citep{Jespersen2022_mangrove, Chuang2024_mergertree_GNN, Wu2024_galaxyhalo_environment}. These \textit{inductive biases} --- the set of assumptions or preferences that bias our learning algorithms towards a specific solution space --- can be incredibly helpful to our learning algorithm in its search for the correct solution. This is especially important in the ``data-poor'' regime where the full space of possible solutions is too large to be efficiently constrained by the available data. None of this forbids a model without inductive biases from finding the same solution; it merely spares the model the trouble and helps with optimisation and data efficiency. 
+As discussed in \S\ref{sec:geometry}, every algorithm carries an implicit inductive bias, but GNNs afford us increased opportunities for specifying the inductive biases ourselves. Two concrete examples make the point. To feed the merger tree only descendant-ward edges encodes causality: no message may flow from a halo to its own past \citep{Jespersen2022_mangrove}. To hand the network only relative separations/velocities $|\mathbf{x}_i - \mathbf{x}_j|$ in place of raw positions/velocities encodes a notion of isotropy, and that single choice carries much of the robustness of the field-level inference of \citet{deSanti2023_fieldlevel_LFI}. 
+
+%Worked example of locality and rotational invariance in local neighbourhood graphs and E(3)-GNNs. Stress that this is not necessary to enforce in the infinite date limit, but until we have infinite data, it is a good idea.
+
+With great power comes great responsibility. The prior that we impose through our choice of data processing and model architecture is fundamental for our ability to find a successful solution to any given learning problem. Even the graph structure itself stands so strong a prior that a wrong one completely misleads \citep{BechlerSpeicher2023_graph_overuse}.  Sometimes, strictly enforcing an inductive bias can be detrimental. When a symmetry holds only approximately, a soft constraint can beat a hard one, at the cost of softer guarantees \citep{Finzi2021_RPP_softequivariance}. At times, to start the optimisation from a soft inductive bias and then iteratively increase the strength of the penalty of violation can also help the model converge to the correct solution \citep{wilson2025deeplearningmysteriousdifferent}.
+
+
+\subsection{Pitfalls, diagnostics, and validation}
+\label{subsec:bp-diagnostics}
+
+A trained GNN reports a number, and it stays silent on whether the number deserves trust. To earn that trust, run the model through a short battery of checks before believing any astrophysical conclusion. The following seven catch most of the failures met in practice, and each costs little.
+
+\begin{itemize}
+    \item \textbf{Test the claimed symmetry.} Permute the node ordering, rotate the box, rerun. When the output drifts, the claimed invariance does not hold, and the leak usually hides in the feature engineering: a coordinate fed raw, a normalisation fixed to the box axes. This is the direct test of the first red flag of \S\ref{subsec:bp-reading}.
+    \item \textbf{Climb the baseline ladder.} Fit an MLP on hand-built summaries, then a Deep Set on the unordered features, then the GNN. Each rung isolates one ingredient: the features, the set structure, the edges. The GNN must beat the rung below it, or the graph is decoration.
+    \item \textbf{Sweep the adjacency.} The linking length or neighbour count is a hyperparameter of the physics, not only of the optimiser. Sweep it and report the curve, not the best point: the shape of the curve reveals which scales carry the signal (Figure~\ref{fig:linking_length}) and how sensitive the conclusion is to a choice no observation fixes.
+    \item \textbf{Split without leakage.} Nodes joined by an edge share information after one round of message passing, so a split by node tests memorisation, not generalisation. Split by simulation box or by connected component instead. When one large graph is all we have, cut it into subvolumes separated by buffer regions wider than the receptive field, one neighbourhood radius per layer, as in \citet{Wu2023_galaxyenvironment_GNN, Wu2024_galaxyhalo_environment}. The transductive setting of \S\ref{subsec:tasks} makes this leak the default, not the exception.
+    \item \textbf{Vary the depth.} Performance against depth should rise, plateau, and gently fall. Track the variance of the node features across layers as well: when it collapses, the network has thermalised (Figure~\ref{fig:oversmoothing}), and further depth washes out the very structure the graph encodes (\S\ref{subsec:bp-when-not}).
+    \item \textbf{Inspect the embeddings, calibrate the posteriors.} Project the pooled graph embeddings to two dimensions and colour them by the target: structure here shows what the network learned, and its absence warns before any metric does. When the output is a posterior, run coverage tests in the spirit of simulation-based inference \citep{Thiele2026_SBI_review}.
+    \item \textbf{Gate the move to real data.} Train on simulation suite A, test on suite B, and only then face the sky. The gap between A and B bounds the optimism of any claim on observations, and the robustness methods of \S\ref{subsec:app-cosmo} exist precisely to shrink that gap.
+\end{itemize}
+
+\subsection{Reading the astro-GNN literature}
+\label{subsec:bp-reading}
+
+There are two general marks to look for when reading the literature on the application of GNNs (and frankly, most other deep learning methods) in astronomy and cosmology. The first is the direct line from the problem to the architecture, the geometry, and the inductive bias it invokes. It should be clear why a GNN is a suitable choice for the task. The second is a demonstrable gain, in performance or interpretability, over a simpler or more commonly applied baseline. The GNN must earn its place.\footnote{As must any other architecture.}
+Beware two red flags: an invariance or equivariance claimed but not held, and the graph deployed where a grid or a sequence would serve better. The first most often occurs when invariances and equivariances are not kept distinct from one another, something that happens to most physicists who instead think of both as ``symmetries'' --- a true statement, but the exact kind of symmetry is important. 
+
+\subsection{When not to use a GNN}
+\label{subsec:bp-when-not}
+%% Notes: A graph suits all kinds of data, but other methods woukd
+While a GNN can suit any kind of task, other methods exist for data that already carry more structure. The regular, evenly sampled one-dimensional sequence, the image on a grid, and the very large dataset of text each find a more efficient and appropriate home elsewhere. 
+Note that \emph{regularity}, not low dimension, often makes the call: the irregular sequence of varying length sits naturally on a graph \citep{Iqbal2025_cluster_xray_GNN}, although it may also be captured with a transformer. 
+
+Two additional significant cautions follow. Firstly, the many advantages of the GNN cost dearly: the price of its generality, of the few inherent assumptions it makes about domain or signal, runs directly to a much heavier compute bill than an inherently structure-exploiting model would pay. This lack of computational efficiency is currently rarely the limiting factor for astrophysical applications, but it is a factor worth keeping in mind. Secondly and relatedly, GNNs are constrained to rather shallow architectures, both due to the aforementioned computational inefficiency and \emph{oversmoothing}. Each round of message passing takes a step of diffusion, so the very deep GNN thermalises: run too many rounds and every node relaxes to the same temperature, individuality boiled away into indistinguishable features (Figure~\ref{fig:oversmoothing}). The residual connection, normalisation, or simple restraint may help \citep{ruschbronstein2023surveyoversmoothing, arnaizrodriguez2026oversmoothing}. The same diffusion picture admits an opposite and rarer failure, \emph{over-squashing}: when long-range information must cross a bottleneck of few edges, too much of it is crushed into fixed-size vectors on the way through \citep{Alon2021_oversquashing_bottleneck}. The two trade off, since the connectivity that speeds mixing also hastens equilibrium \citep{arnaizrodriguez2026oversmoothing}, but oversmoothing remains the clearer and more common issue in practice.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/oversmoothing_demo.png}
+\caption{Oversmoothing as thermalisation. Node features on a community graph, coloured by value, after zero, two, five, and twelve rounds of neighbourhood averaging: the communities blur, then vanish, as the features diffuse toward a common temperature.}
+\label{fig:oversmoothing}
+\end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{Frontier}
+\label{sec:frontier}
+
+A review must focus mostly on what has been done, but the synthesis of these prior works also points beyond the present state of the art. We now flag three directions we expect to matter most: the move onto real data, generative graph models, and new kinds of graphs.
+
+\begin{itemize}
+    \item \textbf{Application on real data.} The ultimate goal of natural science is experiments done using real-world data. The survey of GNN applications above reveals a clear gap. Of the roughly sixty graph-network analyses we cite, only about one in four includes any real observations, and almost all of that quarter is astroparticle physics instrumentation --- detector reconstruction at IceCube and the Pierre Auger Observatory. Less than one scientific analysis in six goes beyond simulation, against roughly one in two for instrumentation. This is the single most consequential gap in the field. A GNN trained on a simulation inherits the simulation's assumptions, and the move to real data demands a robustness only now being developed. The graph framing is crucial for bridging simulation and observation: because robust inductive biases can be included (e.g., galaxy positions enter as biased tracers rather than as pixels) the domain shift between simulation and survey typically stays small, which keeps domain adaptation tractable or unnecessary \citep{deSanti2023_fieldlevel_LFI, Roncoli2023_domainadaptation_cosmology, Lee2024_SDSS_domaingeneralization}. Porting these statistical methods onto real data is the field's most important next step.
+    \item \textbf{Generative graph models.} A generative graph model synthesises a full graph from a lower-dimensional seed. The difficulty begins with the sheer size of the space being sampled: the number of graphs on $N$ nodes grows super-exponentially, as $2^{N(N-1)/2}$, and the model must place its mass on the vanishingly small subspace that is physically valid. But the astrophysical prize is worth that difficulty: sampling plausible merger trees or satellite environments directly from observed galaxies would be transformative. Merger-tree generation from observed properties is especially fundamental to galaxy science, since it would let us compare stellar and halo assembly directly. The astrophysical cases so far, the synthesis of merger trees and cosmic fields \citep{Tang2022_merger_normalizingflow, Nguyen2024_FLORAH_assembly, Nguyen2025_mergertree_generative, Nguyen2026_DREAMS_diffusion, Onutu2025_scorematching_cosmology}, already raise a second difficulty: the problems are all ill-posed, since any reasonable full graph has far more degrees of freedom than the seed vector $z$ that generates it, so the map $z \mapsto G$ is one-to-many and the model must learn a distribution $p(G \mid z)$ rather than a function \citep{Vignac2023_DiGress}. Although this structure makes the problem extremely hard, it also has a useful consequence: a forward generator $p(G\mid z)$ defines, through Bayes, its inverse $p(z\mid G) \propto p(G\mid z)\,p(z)$, so a generative model implies that the regression --- recovering the seed parameters from a graph --- can also be done. Momentum for these methods comes increasingly from outside astrophysics: graph and structure generation already designs molecules and proteins \citep{Hoogeboom2022_EDM_molecules, Watson2023_RFdiffusion}, and reward-driven samplers over graphs such as \texttt{GFlowNets} can produce diverse, high-value candidates for scientific discovery \citep{Bengio2021_GFlowNet, Jain2022_GFlowNet_biological, Bengio2023_GFlowNet_foundations}. We expect this tooling to be developed further, and well --- carried in part by heavy private investment and the economics of drug discovery --- and astrophysics stands to inherit these advances.
+    \item \textbf{New kinds of graphs.} The nature of the Universe is dynamic and multi-scale, meaning that the graphs themselves must be able to (a) change with time and (b) capture long- and short-range interactions at once. Some solutions to capture these necessities are already in place. The \emph{topological} GNN combines graphs at different scales, capturing long- and short-range coupling without inflating the edge count to billions \citep{Lee2025_topological_cosmology}; the cosmic web is the natural target, where a galaxy's fate is spun both from its nearest neighbours and from the larger scale structures around it. The \emph{temporal} GNN, defined on a graph that rewires, grows, or shrinks with time, fits time-ordered data such as the merger tree, which sprouts a node at every halo merger, and the transient sky, whose alert graph rewires nightly as sources brighten and fade in surveys like the Rubin Observatory's LSST \citep{Rossi2020_temporal_GNN}.
+\end{itemize}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/papers_per_year.png}
+\caption{The simulation-to-reality gap, quantified from the bibliography of this review. Astrophysical graph-network analyses per year, coloured by subfield, with hatching marking the analyses that include real observations. The real-data share concentrates in instrumentation, detector reconstruction above all, while the scientific analyses remain overwhelmingly simulation-bound: the frontier this section argues the field must now cross. Generated from the works surveyed in \S\ref{sec:applications}.}
+\label{fig:papers_per_year}
+\end{figure}
+
+The path forward runs on two tracks at once. The methods already honed on simulations should now be carried onto real data, with GNN-enabled simulation-based inference as the natural vehicle \citep{Thiele2026_SBI_review}. At the same time, the methodology itself must keep advancing, through the new kinds of graphs and the generative models sketched above. We expect the coming decade to move GNNs from a promising method tested mostly on simulations to a standard tool applied routinely to observations. We look forward to making this a reality.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{Tutorials}
+\label{sec:tutorials}
+
+% TODO: change these tinyurl links to the github repo URL (+ Zenodo DOI) before submission.
+Theory and background reading may only carry us so far; the Reader who wishes to experiment finds a hands-on GNN tutorial at \url{https://tinyurl.com/GNN1tutorial} and a companion tutorial similar to the exploration behind a published GNN paper on the connection between a galaxy and its environment, at \url{https://tinyurl.com/GNNcompetition}. The Reader can explore how different inductive biases --- embedded through the choice of layer and aggregation --- change the performance and optimisation of the GNN. Beyond these, three external resources are worth the time: the interactive ``Gentle Introduction to Graph Neural Networks'' on Distill for beginners \citep{SanchezLengeling2021_gentle_GNN}; the Stanford CS224W course with its Colab notebooks. For the slightly more advanced Reader, we cannot recommend the geometric-deep-learning proto-book and lectures of \citet{Bronstein2021_geometricDL_book} strongly enough. A full understanding of this proto-book renders us comfortable with any geometric deep learning algorithm.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{Summary and Outlook}
+\label{sec:summary}
+% DRAFT -- CKJ to review before we finalise.
+
+Physics advances through geometry, and the algorithms we build for it ought to do the same. We set out to review a set of principles and their application: fit the structure the data hold, respect the symmetries we trust, and learn only the remainder. The general geometric blueprint presented here makes these principles concrete, and the GNN stands as its most general instrument, the one from which any other major deep learning algorithm can be derived.
+
+This review is based on three threads. First, geometry: weigh the native structure of both the domain and the signal before we reach for an architecture. Second, the graph: the relational substrate whose adjacency we define from our pre-existing physical knowledge or learn from the ground up. Third, the GNN: message passing assembled from the handful of layers and aggregators the Reader can now read off and adapt at will.
+
+The strength of geometric deep learning with GNNs lies not in the physically intuitive implementation, embedding of inductive biases, or adaptability alone, but in the three taken together. A GNN bakes in the symmetries and the structure we trust while fitting what we do not yet understand, and it speaks the native language of physics: centring the object, and the relation between objects, encoded as points and edges, each with attributes, exchanging interaction messages to update their state vectors.
+
+The frontier runs wide and largely open. GNNs have been demonstrated as powerful and well-suited for astrophysics, but a few clear directions remain. Most importantly, the field is now ready to apply GNNs broadly to real data and to improve the return on our hard-earned observational data. The tool stands ready; the Universe, as ever, sits under no obligation to be simple, and so demands these advanced methods. At the same time, we must continue to develop the techniques, with generative models of cosmic structure, and the temporal or topological graphs. The Universe speaks its physics in geometry, objects, and relations. The GNN is how we faithfully listen.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\section{Acknowledgements}
+\label{sec:acknowledgements}
+
+CKJ wishes to thank Marielle Côté-Gendreau for ever-present help with formulating the text and arguments presented here. CKJ furthermore deeply thanks the organisers and participants of the Kavli Institute for Theoretical Physics “Building a Physical Understanding of Galaxy Evolution with Data-driven Astronomy" program, as well as the organisers and participants of the Centre de recherche en astrophysique du Québec (CRAQ) Summer School on Scientific Machine Learning Applied to Astrophysical Data, both of which enabled me to develop the ability to efficiently communicate the guiding principles behind Graph Neural Networks and Geometric Deep Learning. I am furthermore grateful for many useful and illuminating conversations on GNNs with John F. Wu, Peter Melchior, Miles Cranmer, David Spergel, Shirley Ho, Paco Villaescusa-Navarro, T. Lucas Makinen, Chen-Yu Chuang, Adi Varshney, Vasily Belokurov, Tri Nguyen, Kwok Sun Tang, Natalí de Santi, Jordan Krywonos, Matthew Johnson, Yashar Hezaveh, Laurence Perreault Levasseur, and many others.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% ===================== APPENDICES =====================
+% Springer: end-of-chapter appendices use the heading "Appendix" (no \appendix).
+
+
+\bibliographystyle{aasjournal}   % spbasic.bst absent from Overleaf; aasjournal compiles
+\bibliography{ref}
+
+\clearpage
+
+\input{notes/appendix_symmetries}
+
+\section{Appendix: Why a convolution is the only translation-equivariant layer}
+\label{app:conv-proof}
+
+The main text asserts that to demand translation equivariance of a linear layer forces that layer to be a convolution. This appendix proves it. The argument takes three steps on a periodic one-dimensional grid of $N$ pixels, and nothing essential changes in higher dimension.
+
+To set the stage, write the signal as $\mathbf{x}\in\mathbb{R}^{N}$ with pixels $x[n]$, and the shift by $s$ as the operator $S_{s}$, with $(S_{s}\mathbf{x})[n]=x[n-s]$ and indices taken modulo $N$. A general linear layer is a matrix $\mathbf{W}$. Equivariance demands that to shift and then apply the layer equals to apply the layer and then shift: $\mathbf{W}S_{s}=S_{s}\mathbf{W}$ for every $s$.
+
+First, read the demand at the level of matrix entries. The entry $(S_{s}\mathbf{W})_{mn}$ picks out $W_{m-s,\,n}$, while $(\mathbf{W}S_{s})_{mn}$ picks out $W_{m,\,n+s}$, so equivariance requires $W_{m-s,\,n}=W_{m,\,n+s}$ for all $m$, $n$, and $s$. Replace $n$ by $n-s$ and the requirement becomes $W_{m-s,\,n-s}=W_{m,\,n}$: shift both indices together and the entry does not move. The matrix stays constant along its diagonals, and its entries depend only on the difference of the indices, $W_{mn}=w[m-n]$ for some vector $\mathbf{w}$. A matrix of this form is called \emph{circulant}.
+
+Second, read the circulant matrix as an operation. Its action is
+\begin{equation}
+(\mathbf{W}\mathbf{x})[m] \;=\; \sum_{n} w[m-n]\,x[n] \;=\; (\mathbf{w}\ast\mathbf{x})[m],
+\end{equation}
+a convolution of the signal with the kernel $\mathbf{w}$. The converse holds by the same computation run backwards: every convolution is a circulant matrix, and every circulant matrix commutes with every shift. The equivalence is complete. Weight sharing, the defining trick of the CNN, is not a clever economy of parameters but the unique linear answer to a symmetry demand: no pixel may be privileged. Note what the argument does \emph{not} force: locality. The kernel may span the whole grid, and the small compact kernel of the practical CNN is a second, separate inductive bias, scale separation rather than symmetry.
+
+Third, diagonalise. All circulant matrices share one set of eigenvectors, the discrete plane waves $e^{2\pi i kn/N}$, which are exactly the eigenvectors of the shift itself. In that basis every convolution acts as a pointwise multiplication, which is the convolution theorem, and the kernel's eigenvalues are its Fourier coefficients. This is the door through which the graph enters: on a graph the role of the shift passes to the adjacency or the Laplacian, the role of the plane waves to their eigenvectors, and a filter diagonal in that eigenbasis is precisely the spectral graph convolution of Appendix~\ref{app:sym:scale}.
+
+The permutation group tells the companion story, with the graph's own symmetry in the leading role. A permutation-invariant function of a set takes the form $\rho\!\left(\sum_{i}\phi(\mathbf{x}_{i})\right)$, an encode-pool-decode structure, and this form is not a convenience but a characterisation \citep{Zaheer2017_deepsets}. A permutation-\emph{equivariant} linear layer is forced into the two-parameter family $\mathbf{W} = a\,\mathbf{I} + b\,\tfrac{1}{n}\mathbf{1}\mathbf{1}^{\top}$: each element may see only itself and the mean of everyone. The reader has met this layer before, since ``itself plus the aggregate of its neighbours'' is exactly the skeleton of the \texttt{SAGEConv} update of \S\ref{subsec:message-passing}, there with learnable weights and the mean taken over a neighbourhood rather than the whole set. Symmetry dictates the shape of the layer in both worlds, translation handing us the CNN and permutation handing us the GNN, which is the blueprint of \S\ref{sec:geometry} kept in miniature.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\end{document}
