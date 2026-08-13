@@ -7,8 +7,8 @@
 \begin{table}[p]
 \centering
 \rotatebox{90}{%
-\begin{minipage}{0.95\textheight}
-\caption{The astro-GNN literature at a glance, organised by subfield and task. \emph{Level} gives the prediction type of \S\ref{subsec:tasks}: node, edge, or graph, with \emph{Mixed} where a subfield spans several. \emph{Graph construction} names the construction of \S\ref{subsec:no-adjacency}. \emph{Layer} gives the propagation flavour of \S\ref{subsec:flavours}, where \emph{Mixed} usually covers convolutional and message passing. \emph{Real data} marks analyses that include real observations, still the minority (\S\ref{sec:frontier}). One glance answers whether a task has been tried, on what graph, with which layer, and whether it has met the sky. References are representative, not exhaustive.}
+\begin{minipage}{1.1\textheight}
+\caption{The astro-GNN literature at a glance, organised by subfield and task. \emph{Level} gives the prediction type (\S\ref{subsec:tasks}): node, edge, or graph, with \emph{Mixed} where a subfield spans several. \emph{Graph construction} names how the graph was constructed (\S\ref{subsec:no-adjacency}). \emph{Layer} gives the propagation flavour of \S\ref{subsec:flavours}, where \emph{Mixed} usually covers convolutional and message passing. \emph{Real data} marks if any analysis has included real observations, still by far the minority of published works (see \S\ref{sec:frontier}). References are representative, not exhaustive.}
 \label{tab:applications}
 \centering
 \footnotesize
@@ -18,20 +18,20 @@
 \hline\noalign{\smallskip}
 Subfield & Task & Level & Graph construction & Layer & Real data & Representative references \\
 \noalign{\smallskip}\hline\noalign{\smallskip}
-Cosmology \& LSS & $\Omega_m$, $\sigma_8$ from halo/galaxy catalogues & Graph & Radius & Message passing & -- & \citet{Makinen2022_cosmicgraph_LSS, VillanuevaDomingo2022_cosmicgraph_clustering, deSanti2023_fieldlevel_LFI} \\
+Cosmology/LSS & $\Omega_m$, $\sigma_8$ from halo/galaxy catalogues & Graph & Radius & Message passing & -- & \citet{Makinen2022_cosmicgraph_LSS, VillanuevaDomingo2022_cosmicgraph_clustering, deSanti2023_fieldlevel_LFI} \\
  & Continuous-field reconstruction from tracers & Node & Radius & Message passing & -- & \citet{Kvasiuk2024_fieldreconstruction_GNN, Krywonos2026_GNNCNN_reconstructing_DM_from_galaxies} \\
  & Cosmic-web environment classification & Node & Delaunay/proximity & Attentional & -- & \citet{Kololgi2025_cosmicweb_classification} \\
  & Multi-scale cosmology; benchmarks & Graph & Topological/multi-scale & Mixed & -- & \citet{Lee2025_topological_cosmology, Huang2025_CosmoBench_benchmark} \\
  & CMB, lensing, PNG, voids & Mixed & Sphere/proximity & Mixed & -- & \citet{Adams2023_CMB_graphconv, Park2023_lensing_bayesianGNN, Jung2023_QuijotePNG_massfunction, Thiele2026_void_graphflow} \\
 \noalign{\smallskip}
-Galaxies \& halos & Galaxy properties from merger trees & Graph & Tree & Mixed & -- & \citet{Jespersen2022_mangrove, Chuang2024_mergertree_GNN} \\
- & Galaxy--halo connection from environment & Node & Radius & Message passing & -- & \citet{Wu2023_galaxyenvironment_GNN, Wu2024_galaxyhalo_environment, Jespersen2026_environment_assembly} \\
+Galaxies \& Halos & Galaxy properties from merger trees & Graph & Tree & Mixed & -- & \citet{Jespersen2022_mangrove, Chuang2024_mergertree_GNN} \\
+ & Galaxy--halo connection from environment & Node & Radius & Message passing & -- & \citet{Wu2023_galaxyenvironment_GNN, Wu2024_galaxyhalo_environment} \\
  & Halo/cluster masses from neighbourhoods & Node & Radius & Message passing & Yes & \citet{VillanuevaDomingo2022_halomass_GNN, VillanuevaDomingo2023_MW_mass} \\
  & Cluster masses from X-ray profiles & Graph & Sequence-as-graph & Attentional & Yes & \citet{Iqbal2025_cluster_xray_GNN} \\
  & Intrinsic alignments (generative) & Node & Radius & E(3)-equivariant & -- & \citet{Jagvaral2022_intrinsicalignment_GNN} \\
  & Generative trees and environments & Graph & Tree/radius & Mixed & -- & \citet{Tang2022_merger_normalizingflow, Nguyen2024_FLORAH_assembly, Nguyen2025_mergertree_generative, Nguyen2026_DREAMS_diffusion} \\
 \noalign{\smallskip}
-Milky Way \& stars & Chemical/kinematic tagging & Node & Complete/learned & Attentional & Yes & \citet{Spina2025_chemicaltagging_GAT, Berni2025_MWhalo_substructure} \\
+Milky Way, Stars, Local Volume & Chemical/kinematic tagging & Node & Complete/learned & Attentional & Yes & \citet{Spina2025_chemicaltagging_GAT, Berni2025_MWhalo_substructure} \\
  & Dwarf-galaxy dark-matter profiles & Graph & k-NN over stars & Message passing & Yes & \citet{Nguyen2023_dwarf_densityprofile, Nguyen2025_dwarf_GraphNPE, Nguyen2026graphNPE_applied} \\
 \noalign{\smallskip}
 Dynamics & Force laws and masses by symbolic regression & Edge & Complete & Message passing & Yes & \citet{Cranmer2020_symbolicregression_inductivebias, Lemos2023_orbitalmechanics_symbolic} \\

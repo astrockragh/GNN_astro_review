@@ -12,12 +12,12 @@
 ]
 \node[question] (grid) {Data on a regular grid or sequence?};
 \node[answer, right=14mm of grid] (cnn) {CNN / RNN / Transformer\\ (\S\ref{subsec:bp-when-not})};
-\node[question, below=of grid] (edges) {Edges known from physics?};
-\node[answer, right=14mm of edges] (four) {choose: set, complete, or learned\\ (\S\ref{subsec:no-adjacency})};
-\node[answer, below=of edges] (impose) {impose the graph\\ (\S\ref{subsec:no-adjacency})};
+\node[question, below=of grid] (edges) {Edges given?};
+\node[answer, right=14mm of edges] (four) {Choose: \textbf{from physics}, none, fully connected, or learned\\  (\S\ref{subsec:no-adjacency})};
+\node[answer, below=of edges] (impose) {Impose the graph and\\ adapt for inductive \\ bias (\S\ref{subsec:no-adjacency})};
 \node[question, below=of impose] (msg) {Message must depend on edge or receiver features?};
 \node[final, below left=8mm and 2mm of msg] (sage) {\texttt{SAGEConv}\\ \scriptsize cheap, stable, convolutional};
-\node[final, below right=8mm and 2mm of msg] (mp) {full message passing\\ \scriptsize expressive, costlier};
+\node[final, below right=8mm and 2mm of msg] (mp) {Full message passing\\ \scriptsize expressive, costlier};
 \node[advice, below=16mm of msg] (start) {whatever the path: start with the \textbf{sum} aggregator and two to three layers, and beat the Deep Set and summary-statistic baselines before trusting the graph};
 
 \draw[arrow] (grid) -- node[lab] {yes} (cnn);
