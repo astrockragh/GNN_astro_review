@@ -216,34 +216,43 @@ A graph runs directed or undirected, and the physics of the relation decides whi
 %   1.3.2.2 When we must choose the graph structure
 %     + case study, cosmic web: Deep Sets vs k-NN vs radius vs Delaunay.
 
-Often the graph arrives ready-made, its structure given by the data themselves; just as often it does not, and we must decide who connects to whom. The two situations deserve separate treatment.
+Some times the graph arrives ready-made, its structure given by the data themselves; more often it does not, and we must decide --- using our physical intuition and reasoning --- who connects to whom. The question of graph creation in the two situations deserve separate treatment. 
 
-\subsubsection{When the graph structure is given}
+\subsubsection{When the graph structure is given a priori}
 \label{subsubsec:graph-given}
 % TODO (CKJ): expand -- what it means for the structure to be given, with examples.
 
-When the data carry their own relations, a merger tree its branches or a detector its wiring, the graph needs no design, only faithful transcription, and \S\ref{subsec:inevitable} collects the astrophysical cases.
+When the data carry their own a priori relations, the graph structure is given. This can be the case when the graph describes a causal process like a merger tree (Figure \ref{fig:merger_tree}), or a detector with its wiring. As a first step, we only need faithful transcription of the original structure, but we may still impose some inductive biases on our graphs.
+
+As a case study, take the treatment of the merger trees in \citet{Jespersen2022_mangrove, Chuang2024_mergertree_GNN}. The graph structure is inevitable and given \textit{a priori} in the dark-matter merger tree, where the causal halo assembly history forms a causal graph by construction (see Figure~\ref{fig:merger_tree}). However, we may choose to help our algorithms learn by imposing an \emph{inductive bias} on the algorithm through a restructuring of the graphs. The key insight is that since galaxies evolve smoothly when they are not merging, non-merging nodes are less important than merger nodes, an inductive bias that we can encode through the structure of the graph. \cite{Jespersen2022_mangrove} and \cite{Chuang2024_mergertree_GNN} have two different but related methods to solve this. \cite{Jespersen2022_mangrove} collapses the graph between mergers, keeping only nodes around mergers, thus leaving the GNN no choice but to focus on the mergers. \cite{Chuang2024_mergertree_GNN} keeps the snapshots between mergers, but in order to inductively bias the GNN towards learning the importance of mergers, add edges between every merger node and subsequent snapshot nodes. This direct connection between mergers and descendant nodes acts a strong and efficient inductive bias for learning from merger trees.
+
+% The \emph{geometry} turns inevitable in the cosmic web, the point cloud of halos whose relevant structure lives in the proximity graph that threads them (Figure~\ref{fig:cosmic_web}) \citep{Makinen2022_cosmicgraph_LSS, VillanuevaDomingo2022_cosmicgraph_clustering}. In each, the graph alone refuses to lie about the data.
+% TODO (CKJ): add case study here -- the merger tree: what about its structure can
+% and cannot be changed (annotation, 12 Aug 2026).
 
 \subsubsection{When we must choose the graph structure}
 \label{subsubsec:graph-chosen}
 % TODO (CKJ): case study, cosmic web -- compare Deep Sets, k-NN, radius, Delaunay
 % constructions and the inductive bias each carries (incl. Kololgi et al. 2025).
 
-Otherwise we must decide who connects to whom, and four standard moves answer the question. We may \emph{impose} an edge set from physical knowledge: at a neutrino observatory, connect only the hits whose separation stays consistent with a signal at or below the speed of light, a causal constraint no honest edge may violate. We may treat the data as a bare set and reach for a \emph{deep set}, the edgeless limit.\footnote{A set holds no native sense of locality: with no edges, no element lies near any other, so one cannot define a non-trivial coarsening on set structure alone. To coarsen, one must first infer a topology over the points, which precisely turns the set back into a graph.} We may assume a \emph{fully connected} graph, maximally expressive yet quadratic in cost, and so the natural home of the transformer. Or we may \emph{learn} the adjacency jointly with the task.
+The natural worlds often presents us with point-cloud structured data. However, the connections between these points are rarely given \textit{a priori}. We must instead \textit{decide} who connects to whom. There are broadly four standard moves that may provide a way of \textit{choosing} the graph structure. We may \emph{impose} an edge set from physical knowledge:
+\begin{itemize}
+    \item Firstly, we may choose not to impose any graph structure. We then treat the data as a bare set and reach for a \emph{deep set}, the edgeless limit.\footnote{A set holds no native sense of locality: with no edges, no element lies near any other, so one cannot define a non-trivial coarsening on set structure alone. To coarsen, one must first infer a topology over the points, which precisely turns the set back into a graph.}
+    \item We may also assume a \emph{fully connected} graph, maximally expressive yet quadratic in cost. This choice can be reasonable for a low number of nodes, but for most applications, it is unreasonable.\footnote{A transformer is equivalent to a GNN on a fully connected graph, but much more optimized.}
+    \item We may attempt \emph{learn} the adjacency jointly with the task, as has been done by \cite{Orsoe2025_graphnet2_library}, but is otherwise rare in the literature.
+    \item Finally, and most importantly, we may impose a \textit{physically or empirically motivated} graph structure using our hard-earned knowledge about the objects we study.
+\end{itemize}
 
-For the physicist the first move deserves emphasis, again and again: we can often impose the graph from what we already know. The neutrino observatory makes the clean illustration, since one setting admits all four answers, to assume the light-cone structure, to learn the wiring, to treat the hits as a set, or to connect everything, and the literature has tried each \citep{Jespersen2021_icecube_bachelor, Bukhari2023_icecube_kaggle, Sogaard2023_graphnet_neutrino, Orsoe2025_graphnet2_library, Orsoe2026_nubench_benchmark}. To learn the latent structure rewards the ambition but, absent physical priors, defeats it: the space of possible adjacencies runs vast, and the inference couples a discrete object to every downstream gradient. The adjacency matrix, in short, makes a design choice, not a fixed input.
+For the physicist the last move deserves emphasis, again and again: we can often impose the graph from what we already know. For example, at a neutrino observatory, connect only the hits whose separation stays consistent with a signal at or below the speed of light, a causal constraint no edge may violate. 
 
-\subsection{Astrophysical graphs: when the structure is inevitable}
-\label{subsec:inevitable}
+The neutrino observatory makes the clean illustration, since one setting admits all four answers, to assume the light-cone structure, to learn the wiring, to treat the hits as a set, or to connect everything, and the literature has tried each \citep{Jespersen2021_icecube_bachelor, Bukhari2023_icecube_kaggle, Sogaard2023_graphnet_neutrino, Orsoe2025_graphnet2_library, Orsoe2026_nubench_benchmark}. 
 
-Sometimes the graph offers no choice at all. Three astrophysical cases make the point, mapped onto the domain, the signal, and the geometry of \S\ref{subsec:domain-signal}. The \emph{domain} turns inevitable at the IceCube Neutrino Observatory, whose sensors hang in an irregular, two-layer, hexagonal array through the ice; a convolutional network cannot touch it without a faked grid \citep{Choma2018_IceCube_classification, Abbasi2022_IceCube_lowenergy}. The \emph{signal} turns inevitable in the dark-matter merger tree, whose assembly history forms a graph by construction (Figure~\ref{fig:merger_tree}) \citep{Jespersen2022_mangrove, Chuang2024_mergertree_GNN}. The \emph{geometry} turns inevitable in the cosmic web, the point cloud of halos whose relevant structure lives in the proximity graph that threads them (Figure~\ref{fig:cosmic_web}) \citep{Makinen2022_cosmicgraph_LSS, VillanuevaDomingo2022_cosmicgraph_clustering}. In each, the graph alone refuses to lie about the data.
-% TODO (CKJ): add case study here -- the merger tree: what about its structure can
-% and cannot be changed (annotation, 12 Aug 2026).
+Another clear demonstration is the case of the cosmic web. Give the set of possible choices one can make along with the inductive bias implied by each.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.7\textwidth]{figures/full_tree2}
-\caption{A dark-matter halo merger tree: the assembly history forms a graph by construction, with nodes coloured by halo mass and edges that follow the flow of time. The directed edges make causality structural: information may flow from progenitor to descendant, never back. Adapted from \citet{Jespersen2022_mangrove}.}
+\caption{A dark-matter halo merger tree: the assembly history forms a graph by construction, with nodes coloured by halo mass and edges that follow the flow of time. The directed edges make causality structural: information may flow from progenitor to descendant, but never back against the arrow of time. The merger tree is furthermore condensed so that only merger nodes are preserved, providing a strong inductive bias towards the importance of mergers. Adapted from \citet{Jespersen2022_mangrove}.}
 \label{fig:merger_tree}
 \end{figure}
 
@@ -303,7 +312,7 @@ The propagation layer comes in three canonical flavours \citep{Bronstein2021_geo
 \end{align}
 The convolutional layer fixes the neighbour weight $c_{vu}$ (GCN; \citealp{Kipf2016_GCN_semisupervised}); the attentional layer learns a scalar weight $a(\mathbf{x}_u,\mathbf{x}_v)$ (GAT; \citealp{Velickovic2017_GAT_attention}); the message-passing layer computes a full vector message per edge (MPNN). To descend the list buys expressivity with parameters and compute (Figure~\ref{fig:flavours}).
 
-\emph{Expressivity} here means the range of functions the layer can represent. Its formal theory, the Weisfeiler--Lehman ceiling, matters more to computer science than to astrophysics, and Appendix~\ref{app:sym:wl} holds it. What survives into practice is the corollary, that the sum aggregator preserves strictly more of the neighbourhood than the mean or the maximum, a preference \S\ref{subsec:bp-choose} turns into practice. The canonical $c_{vu}$ of the GCN normalises each message by the degrees of sender and receiver, a choice \S\ref{subsec:bp-choose} also weighs critically. The convolutional flavour carries a second pedigree besides: it descends from spectral graph convolution, which filters signals in the eigenbasis of the graph Laplacian much as an ordinary convolution filters in Fourier modes \citep{Bruna2013_spectral_networks, Defferrard2016_chebnet, Kipf2016_GCN_semisupervised}. Appendix~\ref{app:sym:scale} sketches that view. The message-passing picture suffices for everything that follows.
+\emph{Expressivity} here means the range of functions the layer can represent. Its formal theory, the Weisfeiler--Lehman ceiling, matters more to computer science than to astrophysics, and Appendix~\ref{app:sym:wl} holds it. The message-passing picture suffices for everything that follows.
 
 \begin{figure}[p]
 % \centering
@@ -526,7 +535,7 @@ The hardness is inherent to the task. At its core, fibre assignment is a \emph{m
 \label{fig:icecube_graph}
 \end{figure}
 
-Detectors rarely sit on perfect grids, and the neutrino telescope least of all --- making it ideally viewed as a graph (Figure~\ref{fig:icecube_graph}). GNNs reconstruct IceCube events much faster and more precisely than the classical likelihood pipeline \citep{Choma2018_IceCube_classification, Jespersen2021_icecube_bachelor, Abbasi2022_IceCube_lowenergy, Soldin2025_IceCube_GCN}, an effort the \texttt{GraphNeT} library and its benchmarks now consolidate \citep{Bukhari2023_icecube_kaggle, Sogaard2023_graphnet_neutrino, Orsoe2025_graphnet2_library, Orsoe2026_nubench_benchmark} and carry to IceCube-Gen2 and IceAct with combined Transformer-GNN architectures \citep{Paul2025_IceAct_spectrum, VaraCarbonell2025_IceCubeGen2_ML}. Cosmic-ray observatories follow the same principles and thus yield to the same solutions \citep{Ferriere2025_GRAND_cosmicray, Rodriguez2025_Auger_photon}, and radio-interferometric calibration also yields to graph-based simulation-trained networks \citep{Kannan2025_interferometer_GNN}. Wherever the instrument forsakes the Euclidean grid, the graph solves the problem.
+Detectors rarely sit on perfect grids, and the neutrino telescope least of all --- making it ideally viewed as a graph (Figure~\ref{fig:icecube_graph}). The \emph{domain} turns inevitable at the IceCube Neutrino Observatory, whose sensors hang in an irregular, two-layer, hexagonal array through the ice; a convolutional network cannot touch it without a faked grid \citep{Choma2018_IceCube_classification, Abbasi2022_IceCube_lowenergy}. GNNs reconstruct IceCube events much faster and more precisely than the classical likelihood pipeline \citep{Choma2018_IceCube_classification, Jespersen2021_icecube_bachelor, Abbasi2022_IceCube_lowenergy, Soldin2025_IceCube_GCN}, an effort the \texttt{GraphNeT} library and its benchmarks now consolidate \citep{Bukhari2023_icecube_kaggle, Sogaard2023_graphnet_neutrino, Orsoe2025_graphnet2_library, Orsoe2026_nubench_benchmark} and carry to IceCube-Gen2 and IceAct with combined Transformer-GNN architectures \citep{Paul2025_IceAct_spectrum, VaraCarbonell2025_IceCubeGen2_ML}. Cosmic-ray observatories follow the same principles and thus yield to the same solutions \citep{Ferriere2025_GRAND_cosmicray, Rodriguez2025_Auger_photon}, and radio-interferometric calibration also yields to graph-based simulation-trained networks \citep{Kannan2025_interferometer_GNN}. Wherever the instrument forsakes the Euclidean grid, the graph solves the problem.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
