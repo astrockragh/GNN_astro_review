@@ -1,49 +1,30 @@
-# TODO — GNN review, 13 Aug 2026, ranked by importance
+# TODO — GNN review, 13 Aug 2026, after the polish pass
 
-All eleven annotation questions are resolved and applied (ledger: `notes/annotation_ledger.md`). What remains, most important first. The top band is read-throughs of whole sections that have been heavily rewritten or restructured — these carry the most risk of not sounding like you, or of a subtle error surviving.
+State of play: the full §1 polish list is applied (typo sweep, "Split the test set." bullet, Abstract "over", §1.7 fractions harmonised with the rerun figure, Acknowledgements in the first person with matched quotes, appendix UK spellings, spectral duplication trimmed), the GarciaSatorras arXiv duplicate is gone from ref.bib, the §1.2.2 rethink block and §1.9 DRAFT marker are dropped as settled, and the stale-comment sweep is done (both figure-placeholder blocks, all fulfilled §1.3.2 banners, the §1.5.5 planning notes including the Wang 2022 wish, the duplicate \hypersetup). Everything committed; compiles clean here at 50 pp, 0 errors, 0 undefined references. Line numbers below match the committed 671-line main.tex.
 
 ---
 
-## 1. Full-section read-throughs, in priority order
+## 1. Sections awaiting your structural intent
 
-- [ ] **§1.3.2 Building the graph** — *the* priority, because it is not yet written: the structure stands (intro; 1.3.2.1 When the graph structure is given; 1.3.2.2 When we must choose), the content awaits your rewrite ("A lot is wrong. big TODO"), with the cosmic-web case study (Deep Sets / k-NN / radius / Delaunay, Kololgi et al. 2025) and the merger-tree case study (§1.3.3, what can and cannot be changed) planned. Say the word if you want a draft to react to rather than a blank page.
-- [ ] **§1.4.6 Symmetries in message passing** — most heavily reworked section of the annotation pass: E(3) spelled out with what breaks it (stretch, shear), the two-ledger EGNN description, the tidal-force example, the compute-cost sentence, "diet" removed from the promise ordering, the approximate-symmetry sentence emigrated to §1.6.2. The physics claims deserve your eye sentence by sentence.
-- [ ] **§1.6.3 Pitfalls, diagnostics, and validation** — rewritten twice over: your intro sentences ("Any model that runs will return an answer..."), your bullet order, the new Perturb-the-input-features bullet, Calibrate stripped to calibration only, Gate deleted, the "Calibrate, calibrate" close. This is the page readers will photocopy; it should sound exactly like you.
-- [ ] **§1.2.3 The geometric blueprint, and the CNN and GNN it implies** — new GNN-derivation paragraph (permutation equivariance + locality → message passing, leaning on Appendix 1.12), the five Gs absorbed as a closing paragraph, the blueprint box now carrying the signal and the equivariant-finish caveat. Check the derivation paragraph's logic carries your voice and your standards.
-- [ ] **Abstract** — rebuilt from your marginal fragments; it is the most-read paragraph of the chapter and currently entirely my assembly of your words.
-- [ ] **§1.12 Appendix (convolution proof)** — retitled, operator renamed to $T_s$, and the Deep-Sets ending reworked into "message passing in embryo" with the locality bridge to SAGEConv. Re-derive the two index identities once more in the new notation, and judge whether the ending now convinces where it did not before.
-- [ ] **Appendix 1.11** — §1.11.2 deleted (check nothing referenced it), §1.11.3 trimmed, §1.11.4 condensed to one paragraph plus the "no good graph wavelet yet" caveat, new §1.11.4 WL-ceiling subsection carrying the material that left §1.4.2. Verify the flow survives the surgery.
-- [ ] **§1.2.2 opening** — still awaiting your rethink (symmetry as two sub-cases, invariance and equivariance); %TODO sits in the tex. Draft available on request.
-- [ ] **New and rewritten captions** — Fig 1.5 (causality sentence), Fig 1.6 (construction + alternatives), Fig 1.11 and Fig 1.12 (both rewritten to your "rewrite" marks), Table 1.2 (expanded this round: five-sentence caption defining every column).
-- [ ] **§1.9 ending** — the toned-down closing paragraph; the couplet is gone, judge what took its place.
+- [ ] **§1.2.1 three-geometries rewrite** — your comment (l. 97): fold the model/hypothesis-class geometry from Bronstein into the prose properly. The figure and caption already carry three columns; the text still leads with two geometries and mentions the model's only in passing. Say the word if you want a draft to react to.
+- [ ] **§1.3.2.2 lead-in vs. list** — "We may \emph{impose} an edge set from physical knowledge:" promises an impose-list, but the first bullet chooses *no* structure; a neutral lead-in ("Four standard moves offer themselves:") would fix the colon's promise.
+- [ ] **§1.4.5 restructure** — your %% comment (l. 359) still calls for two explicit descriptions: the aggregation inside the message-passing layer, and the global graph-level pooling. The current single paragraph blends them.
+- [ ] **§1.6.2 worked example** — the commented plan (l. 535): locality + rotational invariance worked example with the infinite-data caveat. Write it or delete the comment.
+- [ ] **§1.8 Tutorials** — "three external resources" enumerates two before the full stop and delivers the third in a new sentence; recount or restructure.
+- [ ] **Appendix placement** — references currently come *before* the two appendices. Check against the Springer chapter convention (svmult samples put the appendix before the bibliography).
 
-## 2. Content still to write (beyond §1.3.2)
+## 2. Small hygiene, whenever you pass by
 
-- [ ] **Attentional physical example** — line absorption to be replaced; lensing draft paragraph is in the chat for your judgement, with nodes and edges spelled out.
-- [ ] **Cross-references** — suggestions list in chat; tick the ones you want and I apply them in one pass.
+- [ ] The commented geometry sentence in §1.3.2.1 (l. 213) — its content is absorbed by the cosmic-web paragraphs and the fig:cosmic_web caption; delete when you agree.
+- [ ] The `% NOTE (review)` pair on the workflow figure (ll. 348–349: phi/rho notation mismatch; Chuang/Battaglia credit) — keep until a future redraw or accept and delete.
+- [ ] Grass-fed em-dash footnote sits mid-dash construction (l. 265); reposition or embrace.
+- [ ] `\makeindex` (l. 36) still loaded and unused — use or drop.
+- [ ] Appendix header banner in notes/appendix_symmetries.tex — the provenance note is worth keeping, but the TODO half (run-in headings, duplicated subsection title) is partly done; trim on your next appendix pass.
 
-## 3. Consistency checks that follow from this round's decisions
+## 3. Before submission (parking lot)
 
-- [ ] Lee et al. 2024 is now flagged in §1.5.1 as a deep set, not a GNN proper, and removed from Table 1.2 — decide whether it should also leave the papers-per-year count in `figures/papers_per_year.py` (currently counted, real-data, Cosmology; removing it makes the counts 57 analyses, 12 real).
-- [ ] Kololgi's layer corrected to Attentional in Table 1.2 — Fig 1.10 (your modules2 figure) shows GAT under Attention already; confirm the leaf reference there agrees.
-- [ ] The Gate bullet is gone from §1.6.3; its sim-to-real content survives only in §1.7. Check you are happy with that division of labour.
-
-## 4. On Overleaf (next compile)
-
-- [ ] Full compile with real figures; float placement end to end (rotated table, seven figures, nothing piling at the bibliography).
-- [ ] ToC sanity after the restructures (§1.2.3 absorbed the five Gs; §1.3.2 subsubsections; §1.4.5/§1.4.6/§1.12 retitled; Appendix 1.11.2 gone).
+- [ ] tinyurl links → GitHub + Zenodo DOI (%TODO, l. 608).
+- [ ] Rerun `figures/papers_per_year.py` one final time and re-check the §1.7 fractions against it (they match as of today: 58 analyses, 13 real = fewer than one in four; instruments 6/16 = more than one in three; science 7/42 = one in six).
+- [ ] Overleaf full compile with real figures: float placement end to end (rotated table now at 1.1\textheight width — check it still clears the margins), ToC sanity after the §1.3 restructure.
+- [ ] Repo hygiene: gitignore/relocate `TriNguyen.html` + `TriNguyen_files/`; delete `notes/draft_equivariant_subsection.tex` and `notes/annot_scan/` (baseline + page scans, all scratch); final UK/§ sweep after all manual edits.
 - [ ] `git diff`, then push (Overleaf primary, GitHub secondary).
-
-## 5. Bibliography debts (yours, manual)
-
-- [ ] Complete the author list of the new `Thiele2022_tSZ_deepsets` entry (I stopped at Spergel + et al.; grab the ADS export).
-- [ ] Rossi 2020 identifier; Jespersen 2021 glued URLs; "Jespersen et al. 2026, in preparation" now uncited — cut?; Vignac 2023 / Krizhevsky 2012 identifiers; venue-format consistency.
-- [ ] Verify Wilson (2025) supports the annealed-penalty claim in §1.6.2.
-
-## 6. Before submission (parking lot)
-
-- [ ] tinyurl links → GitHub + Zenodo DOI (%TODO in §1.8).
-- [ ] Rerun `figures/papers_per_year.py` near submission; percentages update themselves.
-- [ ] Typography: hyperref colours, figure-width consistency, grass-fed footnote position (§1.4.1).
-- [ ] `\makeindex` unused — use or drop.
-- [ ] Repo hygiene: gitignore/relocate `TriNguyen.html` + `TriNguyen_files/`; delete `notes/draft_equivariant_subsection.tex`, `notes/annot_scan/`; final UK/§ sweep after all manual edits.
