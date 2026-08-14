@@ -17,28 +17,28 @@
 \begin{tabular}{p{2.2cm} p{5.1cm} p{1.35cm} p{2.4cm} p{2.2cm} p{0.95cm} p{5.3cm}}
 \hline\noalign{\smallskip}
 Subfield & Task & Level & Graph construction & Layer & Real data & Representative references \\
-\noalign{\smallskip}\hline\noalign{\smallskip}
-Cosmology/LSS & $\Omega_m$, $\sigma_8$ from halo/galaxy catalogues & Graph & Radius & Message passing & -- & \citet{Makinen2022_cosmicgraph_LSS, VillanuevaDomingo2022_cosmicgraph_clustering, deSanti2023_fieldlevel_LFI} \\
- & Continuous-field reconstruction from tracers & Node & Radius & Message passing & -- & \citet{Kvasiuk2024_fieldreconstruction_GNN, Krywonos2026_GNNCNN_reconstructing_DM_from_galaxies} \\
- & Cosmic-web environment classification & Node & Delaunay/proximity & Attentional & -- & \citet{Kololgi2025_cosmicweb_classification} \\
- & Multi-scale cosmology; benchmarks & Graph & Topological/multi-scale & Mixed & -- & \citet{Lee2025_topological_cosmology, Huang2025_CosmoBench_benchmark} \\
- & CMB, lensing, PNG, voids & Mixed & Sphere/proximity & Mixed & -- & \citet{Adams2023_CMB_graphconv, Park2023_lensing_bayesianGNN, Jung2023_QuijotePNG_massfunction, Thiele2026_void_graphflow} \\
+\noalign{\smallskip}\svhline\noalign{\smallskip}
+Cosmology/LSS & $\Omega_m$, $\sigma_8$ from halo/galaxy catalogues & Graph & Radius & Message passing & -- & \citeauthor{Makinen2022_cosmicgraph_LSS} (2022); \citeauthor{VillanuevaDomingo2022_cosmicgraph_clustering} (2022); \citeauthor{deSanti2023_fieldlevel_LFI} (2023) \\
+ & Continuous-field reconstruction from tracers & Node & Radius & Message passing & -- & \citeauthor{Kvasiuk2024_fieldreconstruction_GNN} (2024); \citeauthor{Krywonos2026_GNNCNN_reconstructing_DM_from_galaxies} (2026) \\
+ & Cosmic-web environment classification & Node & Delaunay/proximity & Attentional & -- & \citeauthor{Kololgi2025_cosmicweb_classification} (2025) \\
+ & Multi-scale cosmology; benchmarks & Graph & Topological/multi-scale & Mixed & -- & \citeauthor{Lee2025_topological_cosmology} (2025); \citeauthor{Huang2025_CosmoBench_benchmark} (2025) \\
+ & CMB, lensing, PNG, voids & Mixed & Sphere/proximity & Mixed & -- & \citeauthor{Adams2023_CMB_graphconv} (2023); \citeauthor{Park2023_lensing_bayesianGNN} (2023); \citeauthor{Jung2023_QuijotePNG_massfunction} (2023); \citeauthor{Thiele2026_void_graphflow} (2026) \\
 \noalign{\smallskip}
-Galaxies \& Halos & Galaxy properties from merger trees & Graph & Tree & Mixed & -- & \citet{Jespersen2022_mangrove, Chuang2024_mergertree_GNN} \\
- & Galaxy--halo connection from environment & Node & Radius & Message passing & -- & \citet{Wu2023_galaxyenvironment_GNN, Wu2024_galaxyhalo_environment} \\
- & Halo/cluster masses from neighbourhoods & Node & Radius & Message passing & Yes & \citet{VillanuevaDomingo2022_halomass_GNN, VillanuevaDomingo2023_MW_mass} \\
- & Cluster masses from X-ray profiles & Graph & Sequence-as-graph & Attentional & Yes & \citet{Iqbal2025_cluster_xray_GNN} \\
- & Intrinsic alignments (generative) & Node & Radius & E(3)-equivariant & -- & \citet{Jagvaral2022_intrinsicalignment_GNN} \\
- & Generative trees and environments & Graph & Tree/radius & Mixed & -- & \citet{Tang2022_merger_normalizingflow, Nguyen2024_FLORAH_assembly, Nguyen2025_mergertree_generative, Nguyen2026_DREAMS_diffusion} \\
+Galaxies \& Halos & Galaxy properties from merger trees & Graph & Tree & Mixed & -- & \citeauthor{Jespersen2022_mangrove} (2022); \citeauthor{Chuang2024_mergertree_GNN} (2024) \\
+ & Galaxy--halo connection from environment & Node & Radius & Message passing & -- & \citeauthor{Wu2023_galaxyenvironment_GNN} (2023); \citeauthor{Wu2024_galaxyhalo_environment} (2024) \\
+ & Halo/cluster masses from neighbourhoods & Node & Radius & Message passing & Yes & \citeauthor{VillanuevaDomingo2022_halomass_GNN} (2022); \citeauthor{VillanuevaDomingo2023_MW_mass} (2023) \\
+ & Cluster masses from X-ray profiles & Graph & Sequence-as-graph & Attentional & Yes & \citeauthor{Iqbal2025_cluster_xray_GNN} (2025) \\
+ & Intrinsic alignments (generative) & Node & Radius & E(3)-equivariant & -- & \citeauthor{Jagvaral2022_intrinsicalignment_GNN} (2022) \\
+ & Generative trees and environments & Graph & Tree/radius & Mixed & -- & \citeauthor{Tang2022_merger_normalizingflow} (2022); \citeauthor{Nguyen2024_FLORAH_assembly} (2024); \citeauthor{Nguyen2025_mergertree_generative} (2025); \citeauthor{Nguyen2026_DREAMS_diffusion} (2026) \\
 \noalign{\smallskip}
-Milky Way, Stars, Local Volume & Chemical/kinematic tagging & Node & Complete/learned & Attentional & Yes & \citet{Spina2025_chemicaltagging_GAT, Berni2025_MWhalo_substructure} \\
- & Dwarf-galaxy dark-matter profiles & Graph & k-NN over stars & Message passing & Yes & \citet{Nguyen2023_dwarf_densityprofile, Nguyen2025_dwarf_GraphNPE, Nguyen2026graphNPE_applied} \\
+Milky Way, Stars, Local Volume & Chemical/kinematic tagging & Node & Complete/learned & Attentional & Yes & \citeauthor{Spina2025_chemicaltagging_GAT} (2025); \citeauthor{Berni2025_MWhalo_substructure} (2025) \\
+ & Dwarf-galaxy dark-matter profiles & Graph & k-NN over stars & Message passing & Yes & \citeauthor{Nguyen2023_dwarf_densityprofile} (2023); \citeauthor{Nguyen2025_dwarf_GraphNPE} (2025); \citeauthor{Nguyen2026graphNPE_applied} (2026) \\
 \noalign{\smallskip}
-Dynamics & Force laws and masses by symbolic regression & Edge & Complete & Message passing & Yes & \citet{Cranmer2020_symbolicregression_inductivebias, Lemos2023_orbitalmechanics_symbolic} \\
+Dynamics & Force laws and masses by symbolic regression & Edge & Complete & Message passing & Yes & \citeauthor{Cranmer2020_symbolicregression_inductivebias} (2020); \citeauthor{Lemos2023_orbitalmechanics_symbolic} (2023) \\
 \noalign{\smallskip}
-Instruments & Fibre assignment, resource allocation & Node & Conflict graph & Message passing & Yes & \citet{Cranmer2021_resourceallocation_unsupervised, Wang2022_spectroscopy_resourceallocation, Sun2026_fiberassign_GNN} \\
- & Neutrino- and muon-event reconstruction & Graph & k-NN over hits & Mixed & Yes & \citet{Choma2018_IceCube_classification, Abbasi2022_IceCube_lowenergy, Sogaard2023_graphnet_neutrino, Soldin2025_IceCube_GCN} \\
- & Cosmic rays, interferometry & Graph & Detector geometry & Mixed & Yes & \citet{Ferriere2025_GRAND_cosmicray, Rodriguez2025_Auger_photon, Kannan2025_interferometer_GNN} \\
+Instruments & Fibre assignment, resource allocation & Node & Conflict graph & Message passing & Yes & \citeauthor{Cranmer2021_resourceallocation_unsupervised} (2021); \citeauthor{Wang2022_spectroscopy_resourceallocation} (2022); \citeauthor{Sun2026_fiberassign_GNN} (2026) \\
+ & Neutrino- and muon-event reconstruction & Graph & k-NN over hits & Mixed & Yes & \citeauthor{Choma2018_IceCube_classification} (2018); \citeauthor{Abbasi2022_IceCube_lowenergy} (2022); \citeauthor{Sogaard2023_graphnet_neutrino} (2023); \citeauthor{Soldin2025_IceCube_GCN} (2025) \\
+ & Cosmic rays, interferometry & Graph & Detector geometry & Mixed & Yes & \citeauthor{Ferriere2025_GRAND_cosmicray} (2025); \citeauthor{Rodriguez2025_Auger_photon} (2025); \citeauthor{Kannan2025_interferometer_GNN} (2025) \\
 \noalign{\smallskip}\hline
 \end{tabular}}
 \end{minipage}}
