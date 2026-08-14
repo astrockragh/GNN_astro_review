@@ -1,19 +1,3 @@
-% =====================================================================
-% DRAFT APPENDIX: Symmetries, Representations, and Invariance
-% Rewritten (NOT lifted) from Bronstein et al. (2021) GDL proto-book, sec. 3
-% \citep{Bronstein2021_geometricDL_book}, per CKJ margin comment p.16.
-% Depth: EXPANSIVE on 3.1, SHORT on 3.2 & 3.3, MEDIUM on 3.4; 3.5 (the
-% blueprint) lives in the main text. House style: light on abstract math,
-% heavy on physical-system analogies. Group-theory statements refer to
-% \citep{Bronstein2021_geometricDL_book} and/or Zee's "Group Theory in a
-% Nutshell for Physicists" \citep{Zee2016_grouptheory_nutshell}; other
-% citations (Klein's Erlangen Programme, Mallat for wavelets) replicated from
-% Bronstein and can be promoted to bib entries if we keep them.
-% TODO (CKJ): revisit this appendix later -- run-in headings (svmult \runinhead
-% vs orphaned \paragraph), the subsection title duplicating the section title,
-% and general structure/typography.
-% =====================================================================
-
 \section{Appendix: Symmetries, Representations, and Invariance}
 \label{app:symmetries}
 
@@ -73,6 +57,3 @@ The graph inherits every piece of this story through the \emph{graph Laplacian} 
 \label{app:sym:wl}
 
 The computer-science literature measures the expressivity of message passing against a classical yardstick, the Weisfeiler--Lehman (WL) test. The WL test attacks graph isomorphism, the question of whether two graphs share one wiring: give every node the same initial colour, repeatedly recolour each node by the multiset of its neighbours' colours, and compare the two colour histograms. Message passing performs exactly this refinement with learned functions in place of recolourings, so no message-passing network can tell apart two graphs the WL test cannot \citep{Xu2018_GIN_expressiveness}. The ceiling matters in computer science, where benchmark graphs often arrive featureless and regular, and topology is all there is to learn. It matters far less in astrophysics, where the node arrives loaded with masses, positions, and velocities: two haloes rarely share a feature vector, the colours differ from the start, and the pathological cases lose their bite. The practical residue of the theory, that the sum aggregator preserves strictly more of the neighbourhood than the mean or the maximum, is folded into the advice of \S\ref{subsec:bp-choose}. The canonical $c_{vu}$ of the GCN normalises each message by the degrees of sender and receiver, a choice \S\ref{subsec:bp-choose} also weighs critically.
-
-% NOTE: 3.5 (the GDL blueprint: equivariant layers -> local pooling -> global
-% pooling -> readout) is covered in the MAIN TEXT, not here (per CKJ).
