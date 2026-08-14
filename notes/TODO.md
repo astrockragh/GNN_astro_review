@@ -23,8 +23,8 @@ State of play: the full §1 polish list is applied (typo sweep, "Split the test 
 
 ## 3. Before submission (parking lot)
 
-- [ ] tinyurl links → GitHub + Zenodo DOI (%TODO, l. 608).
 - [ ] Rerun `figures/papers_per_year.py` one final time and re-check the §1.7 fractions against it (they match as of today: 58 analyses, 13 real = fewer than one in four; instruments 6/16 = more than one in three; science 7/42 = one in six).
 - [ ] Overleaf full compile with real figures: float placement end to end (rotated table now at 1.1\textheight width — check it still clears the margins), ToC sanity after the §1.3 restructure.
-- [ ] Repo hygiene: gitignore/relocate `TriNguyen.html` + `TriNguyen_files/`; delete `notes/draft_equivariant_subsection.tex` and `notes/annot_scan/` (baseline + page scans, all scratch); final UK/§ sweep after all manual edits.
+- [ ] Empty `_to_delete/` once more — it reappeared with one stale git `index.lock` inside (a by-product of git commands run through the bridge, which cannot delete its own lock; harmless, and none will recur since I now avoid git on your machine).
+- [ ] Final UK/§ sweep after all manual edits.
 - [ ] `git diff`, then push (Overleaf primary, GitHub secondary).

@@ -13,8 +13,12 @@ animations
 # scratch screenshots
 Screenshot *.png
 
-# macOS cruft
-.DS_Store
+# reference material kept out of the repo
+notes/TriNguyen*
 
-# scratch screenshots
-Screenshot *.png
+# scratch awaiting manual deletion
+_to_delete/
+
+GNN_astro_review_v00.pdf
+GNN_astro_review_v0.pdf
+GNN_astro_review_v1.pdf
