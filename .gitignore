@@ -19,6 +19,7 @@ notes/TriNguyen*
 # scratch awaiting manual deletion
 _to_delete/
 
+GNN_astro_review_submission.zip
 GNN_astro_review_v00.pdf
 GNN_astro_review_v0.pdf
 GNN_astro_review_v1.pdf
@@ -26,3 +27,7 @@ GNN_astro_review_v1.pdf
 # untracked strays kept local
 GNN_astro_review_v00.pdf
 figures/publishing_agreement_signed.pdf
+
+# local submission package
+GNN_astro_review_submission/
+GNN_astro_review_submission.zip

@@ -39,6 +39,8 @@ The unnumbered "Appendix 1: …" / "Appendix 2: …" headings are Springer style
 
 The arXiv version is fully standalone: no "Chapter N" line, and article-style numbering throughout — sections 1, 2, 3, Fig. 1, Table 1, equations (1). Both steps verified against Template/svmult.cls; placement matters, since svmult resets these switches at \begin{document}.
 
+**Step 0.** Restore the full standalone title: swap the comment markers on lines 48-49 of main.tex, so \title{Machine Learning Techniques for Astrophysics and Cosmology: Graph Neural Networks} is active and the short book-chapter title \title{Graph Neural Networks} is commented out. (Delete this step if the short title is wanted on arXiv too.)
+
 **Step 1.** Delete the Springer line `\setcounter{chapter}{3}` before \maketitle and put in its place:
 
     \makeatletter\@numarttrue\makeatother
