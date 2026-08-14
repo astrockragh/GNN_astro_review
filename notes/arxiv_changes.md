@@ -34,3 +34,23 @@ The unnumbered "Appendix 1: …" / "Appendix 2: …" headings are Springer style
 - No embargo applies to the submitted version — post any time.
 - Comment field, per the publisher FAQ: "Invited chapter for the edited book *[Title of the book]* (Eds. [Names of the Editors], Springer Singapore, expected in [year])".
 - After publication, add the chapter DOI on the arXiv page.
+
+## 5. Chapter heading and numbering for the standalone (arXiv) version
+
+The arXiv version is fully standalone: no "Chapter N" line, and article-style numbering throughout — sections 1, 2, 3, Fig. 1, Table 1, equations (1). Both steps verified against Template/svmult.cls; placement matters, since svmult resets these switches at \begin{document}.
+
+**Step 1.** Delete the Springer line `\setcounter{chapter}{3}` before \maketitle and put in its place:
+
+    \makeatletter\@numarttrue\makeatother
+    \setcounter{chapter}{1}
+
+**Step 2.** Immediately after \maketitle add:
+
+    \makeatletter
+    \def\thesection{\@arabic\c@section}
+    \def\thefigure{\@arabic\c@figure}
+    \def\thetable{\@arabic\c@table}
+    \def\theequation{\arabic{equation}}
+    \makeatother
+
+Subsections follow automatically (1.1, 1.1.1), every \S cross-reference prints the new numbers, and the unnumbered "Appendix 1/2" headings already fit this standalone look — keep them. One thing to eyeball on the first arXiv compile: the running heads, which svmult builds from the chapter title in book mode.
