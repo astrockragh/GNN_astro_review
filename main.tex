@@ -525,9 +525,7 @@ For the neighbourhood aggregator function in the message passing layer, it is of
 \label{subsec:bp-bias}
 
 A central tenet of geometric deep learning is: \textit{``do not learn what you already know.''}\footnote{Also said countless times by Professor Peter Melchior.} Our models learn faster, cheaper, and more robustly when we embed prior structure we trust: through the symmetries we build in, and through the graph we construct, with its resolution, locality, or causality \citep{Jespersen2022_mangrove, Chuang2024_mergertree_GNN, Wu2024_galaxyhalo_environment}. These \textit{inductive biases} --- the set of assumptions or preferences that bias our learning algorithms towards a specific solution space --- can be incredibly helpful to our learning algorithm in its search for the correct solution. This is especially important in the ``data-poor'' regime where the full space of possible solutions is too large to be efficiently constrained by the available data. None of this forbids a model without inductive biases from finding the same solution; it merely spares the model the trouble and helps with optimisation and data efficiency. 
-As discussed in \S\ref{sec:geometry}, every algorithm carries an implicit inductive bias, but GNNs afford us increased opportunities for specifying the inductive biases ourselves. Two concrete examples make the point. To feed the merger tree only descendant-ward edges encodes causality: no message may flow from a halo to its own past \citep{Jespersen2022_mangrove}. To hand the network only relative separations/velocities $|\mathbf{x}_i - \mathbf{x}_j|$ in place of raw positions/velocities encodes a notion of isotropy, and that single choice carries much of the robustness of the field-level inference of \citet{deSanti2023_fieldlevel_LFI}. The choices that shrink the graph carry bias too: to cut a merger tree at a minimum progenitor mass, as in \citet{Jespersen2022_mangrove, Chuang2024_mergertree_GNN}, encodes which histories matter. 
-
-%Worked example of locality and rotational invariance in local neighbourhood graphs and E(3)-GNNs. Stress that this is not necessary to enforce in the infinite date limit, but until we have infinite data, it is a good idea.
+As discussed in \S\ref{sec:geometry}, every algorithm carries an implicit inductive bias, but GNNs afford us increased opportunities for specifying the inductive biases ourselves. Two concrete examples make the point. To feed the merger tree only descendant-ward edges encodes causality: no message may flow from a halo to its own past \citep{Jespersen2022_mangrove}. To hand the network only relative separations/velocities $|\mathbf{x}_i - \mathbf{x}_j|$ in place of raw positions/velocities encodes a notion of isotropy, and that single choice carries much of the robustness of the field-level inference of \citet{deSanti2023_fieldlevel_LFI}. The choices that shrink the graph carry bias too: to cut a merger tree at a minimum progenitor mass, as in \citet{Jespersen2022_mangrove, Chuang2024_mergertree_GNN}, encodes which histories matter. We note that that these inductive biases are not necessary to implement in the limit of infinite data and compute. But until that it is the case, we must do our best to help our algorithms learn.
 
 With great power comes great responsibility. The prior that we impose through our choice of data processing and model architecture is fundamental for our ability to find a successful solution to any given learning problem. Even the graph structure itself stands so strong a prior that a wrong one completely misleads \citep{BechlerSpeicher2023_graph_overuse}.  Sometimes, strictly enforcing an inductive bias can be detrimental. When a symmetry holds only approximately, as for a survey with a preferred line of sight, redshift-space distortions, or a selection function (effects Appendix~\ref{app:sym:deformation} formalises), a soft constraint can beat a hard one, at the cost of softer guarantees, and the strict architecture can even mislead \citep{Finzi2021_RPP_softequivariance}. At times, to start the optimisation from a soft inductive bias and then iteratively increase the strength of the penalty of violation can also help the model converge to the correct solution \citep{wilson2025deeplearningmysteriousdifferent}.
 
@@ -600,7 +598,7 @@ The path forward runs on two tracks at once. The methods already honed on simula
 \section{Tutorials}
 \label{sec:tutorials}
 
-Theory and background reading may only carry us so far; the Reader who wishes to experiment finds a hands-on GNN tutorial and a companion tutorial similar to the exploration behind a published GNN paper on the connection between a galaxy and its environment, both at \url{https://github.com/astrockragh/GNN_tutorials}, permanently archived at \href{https://doi.org/10.5281/zenodo.21926993}{doi:10.5281/zenodo.21926993}. The Reader can explore how different inductive biases --- embedded through the choice of layer and aggregation --- change the performance and optimisation of the GNN. Beyond these, three external resources are worth the time: the interactive ``Gentle Introduction to Graph Neural Networks'' on Distill for beginners \citep{SanchezLengeling2021_gentle_GNN}; the Stanford CS224W course with its Colab notebooks. For the slightly more advanced Reader, we cannot recommend the geometric-deep-learning proto-book and lectures of \citet{Bronstein2021_geometricDL_book} strongly enough. A full understanding of this proto-book renders us comfortable with any geometric deep learning algorithm.
+Theory and background reading may only carry us so far; the Reader who wishes to experiment finds a hands-on GNN tutorial and a companion tutorial similar to the exploration behind a published GNN paper on the connection between a galaxy and its environment, both at \url{https://github.com/astrockragh/GNN_tutorials}, permanently archived at \href{https://doi.org/10.5281/zenodo.21926993}{doi:10.5281/zenodo.21926993}. The Reader can explore how different inductive biases --- embedded through the choice of layer and aggregation --- change the performance and optimisation of the GNN. Beyond these, three external resources are worth the time. The first two are the interactive ``Gentle Introduction to Graph Neural Networks'' on Distill for beginners \citep{SanchezLengeling2021_gentle_GNN} and the Stanford CS224W course with its Colab notebooks. For the slightly more advanced Reader, we cannot recommend the geometric-deep-learning proto-book and lectures of \citet{Bronstein2021_geometricDL_book} strongly enough. A full understanding of this proto-book renders us comfortable with any geometric deep learning algorithm.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -632,10 +630,6 @@ CKJ wishes to thank Marielle Côté-Gendreau for ever-present help with formulat
 % ===================== APPENDICES =====================
 % Springer: end-of-chapter appendices use the heading "Appendix" (no \appendix).
 
-
-\bibliographystyle{aasjournal}   % spbasic.bst absent from Overleaf; aasjournal compiles
-\bibliography{ref}
-
 \clearpage
 
 \input{notes/appendix_symmetries}
@@ -656,6 +650,12 @@ Second, read the circulant matrix as an operation. Its action is
 a convolution of the signal with the kernel $\mathbf{w}$. The converse holds by the same computation run backwards: every convolution is a circulant matrix, and every circulant matrix commutes with every shift. The equivalence is complete. Weight sharing, the defining trick of the CNN, is not a clever economy of parameters but the unique answer to a symmetry demand. Note what the argument does \emph{not} force: locality. The kernel may span the whole grid, and the small compact kernel of the practical CNN is a second, separate inductive bias, scale separation rather than symmetry.
 
 Third, diagonalise. All circulant matrices share one set of eigenvectors, the discrete plane waves $e^{2\pi i kn/N}$, which are exactly the eigenvectors of the shift itself. In that basis every convolution acts as a pointwise multiplication, which is the convolution theorem, and the kernel's eigenvalues are its Fourier coefficients. This is the door through which the graph enters: on a graph the role of the shift passes to the adjacency or the role of the plane waves to their eigenvectors, and a filter diagonal in that eigenbasis is the spectral graph convolution of Appendix~\ref{app:sym:scale}.
+
+\clearpage
+
+\bibliographystyle{aasjournal}   % spbasic.bst absent from Overleaf; aasjournal compiles
+\bibliography{ref}
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
