@@ -1,7 +1,18 @@
 \documentclass[graybox, envcountchap]{Template/svmult}
 
 
-\usepackage[numbers,sort&compress]{natbib}
+%% =================== VERSION SWITCH ===================
+%% One keyword controls everything. Set:
+%%   \arxivfalse  -> Springer chapter: "Chapter 4", 4.x numbering, short title,
+%%                   numbered citations, references after the appendices.
+%%   \arxivtrue   -> standalone arXiv: no chapter line, sections 1, 2, 3,
+%%                   full title, author-year citations, references before the appendices.
+\newif\ifarxiv
+\arxivfalse
+%% ======================================================
+\ifarxiv\usepackage{natbib}\else\usepackage[numbers,sort&compress]{natbib}\fi
+\newcommand{\pcite}[1]{\ifarxiv\citealp{#1}\else\citep{#1}\fi}% citation inside parentheses, correct in both modes
+\newcommand{\printreferences}{\clearpage\bibliographystyle{aasjournal}\bibliography{ref}}
 \usepackage{pifont}
 \usepackage{tikz}            % decision flowchart in Best Practices
 \usetikzlibrary{shapes.geometric, arrows.meta, positioning}
@@ -45,16 +56,32 @@
 
 
 
-% \title{Machine Learning Techniques for Astrophysics and Cosmology: Graph Neural Networks}
+\ifarxiv
+\title{Graph Neural Networks for Astrophysics and Cosmology}
+\else
 \title{Graph Neural Networks}
+\fi
 % Use \titlerunning{Short Title} for an abbreviated version of
 % your contribution title if the original one is too long
 \titlerunning{Graph Neural Networks for Astrophysics and Cosmology}
 \author{Christian Kragh Jespersen}
 \authorrunning{C. K. Jespersen}
 \institute{Christian Kragh Jespersen (\Letter,  \email{christian.jespersen@utoronto.ca}) \at David A. Dunlap Department of Astronomy \& Astrophysics, University of Toronto, Toronto, ON M5S 3H4, Canada \\ Department of Statistical Sciences, University of Toronto, Toronto, ON M5S 3G3, Canada \\ Canadian Institute for Theoretical Astrophysics, University of Toronto, 60 St George Street, Toronto, M5S 3H8, Ontario, Canada \\  Department of Astrophysical Sciences, Princeton University, Princeton, NJ 08544, USA}
-\setcounter{chapter}{3} % Springer volume position; DELETE for the arXiv version (see notes/arxiv_changes.md)
+\ifarxiv
+\makeatletter\@numarttrue\makeatother% suppress the "Chapter N" line (svmult resets this at \begin{document}, so it must sit here)
+\setcounter{chapter}{1}% keeps the counter sane; the redefinitions below hide it
+\else
+\setcounter{chapter}{3}% Springer volume position
+\fi
 \maketitle
+\ifarxiv
+\makeatletter% article-style numbering: sections 1, 2, 3; Fig. 1; Table 1; Eq. (1)
+\def\thesection{\@arabic\c@section}
+\def\thefigure{\@arabic\c@figure}
+\def\thetable{\@arabic\c@table}
+\def\theequation{\arabic{equation}}
+\makeatother
+\fi
 
 \abstract{Physics seldom makes breakthroughs when we consider objects only in isolation. Instead we model and measure how objects sit among their neighbours, spatial, temporal, or otherwise: a galaxy in its environment, a halo in its history, a photon hit in a detector. Graphs are ideally suited for encoding exactly these relations, and Graph Neural Networks (GNNs) learn the geometric functions that respect them. This chapter presents the use of GNNs for astrophysics and cosmology, and argues that GNNs often suit physics and physical data better than any alternative: they fit the native geometry of the domain and the signal, enable the incorporation of the symmetries and prior knowledge we already trust and have toiled to build, and stay flexible enough to capture what we do not yet understand. GNNs' physically intuitive workings also render them more interpretable than other deep-learning architectures. We show how we can begin from general principles of the geometry of deep learning and build the graph and the graph neural network from the ground up, and how other architectures, like the convolutional network and the transformer, can be seen as special cases of one unified geometric blueprint. We survey applications across cosmology, galaxy formation, dynamics, and instrumentation; and we chart the frontier. From this survey, we find that only 1 in 6 articles outside instrumentation apply GNNs to data rather than just simulations. We also distil a set of best practices, including when \emph{not} to reach for a graph. Throughout, we will prioritise physical intuition and foundational principles over mathematical machinery whenever possible.}
 
@@ -286,7 +313,7 @@ The propagation layer comes in three canonical flavours \citep{Bronstein2021_geo
   \mathbf{h}_u &= \phi\!\Big(\mathbf{x}_u, \textstyle\bigoplus_{v\in\mathcal{N}_u}
        \psi(\mathbf{x}_u,\mathbf{x}_v,\mathbf{e}_{uv})\Big).
 \end{align}
-The convolutional layer fixes the neighbour weight $c_{vu}$ (GCN, \citep{Kipf2016_GCN_semisupervised}); the attentional layer learns a scalar weight $a(\mathbf{x}_u,\mathbf{x}_v)$ (GAT, \citep{Velickovic2017_GAT_attention}); the message-passing layer computes a full vector message per edge (MPNN). To descend the list buys expressivity with parameters and compute (Figure~\ref{fig:flavours}).
+The convolutional layer fixes the neighbour weight $c_{vu}$ (GCN; \pcite{Kipf2016_GCN_semisupervised}); the attentional layer learns a scalar weight $a(\mathbf{x}_u,\mathbf{x}_v)$ (GAT; \pcite{Velickovic2017_GAT_attention}); the message-passing layer computes a full vector message per edge (MPNN). To descend the list buys expressivity with parameters and compute (Figure~\ref{fig:flavours}).
 
 \emph{Expressivity} here means the range of functions the layer can represent. Its formal theory, the Weisfeiler--Lehman ceiling, matters more to computer science than to astrophysics, and \hyperref[app:sym:wl]{Appendix~1} holds it. The message-passing picture suffices for everything that follows.
 
@@ -332,7 +359,7 @@ A GNN affords every task one might want, across all three possible levels and tw
 \label{fig:tasks}
 \end{figure}
 
-One more distinction matters before the tasks meet data: whether the network must generalise across many graphs, or only fill in the gaps of one. The literature calls the two modes inductive and transductive learning \citep{Hamilton2017_early_graph_review}.
+One more distinction matters before the tasks meet data: whether the network must generalise across many graphs, or only fill in the gaps of one. The literature calls the two modes inductive and transductive learning \citep{Hamilton2017_representation_review}.
 
 \begin{svgraybox}
 \textbf{Inductive vs.\ transductive learning.} Inductive learning\footnotemark{} trains on many graphs and deploys on new, unseen ones. Transductive learning trains and predicts within one fixed graph in order to spread labels from the nodes that have them to the nodes that lack them.
@@ -358,7 +385,7 @@ The three feature types, the edge $E$, the node $V$, and the global $U$, need no
 Two kinds of aggregations and poolings\footnote{These terms can be used interchangeably.} commonly take place in GNNs. The first is when aggregating messages sent from neighbouring nodes; the second is to achieve a graph-level output (as is so often the case in cosmology). In both, we must pool in a permutation-invariant way. The simplest pooling functions are the \texttt{sum}, \texttt{average}, \texttt{maximum}, and \texttt{minimum}. The sum grows with the node count and therefore retains it as a signal, while the mean stays invariant to it, a trade-off \S\ref{subsec:bp-choose} discusses further. Any of these functions taking over the nodes is order-independent, and so permutation-invariant.  Richer, distribution-aware pooling functions are rarer but do exist: the differentiable histogram, for one, captures higher moments and stays interpretable in the language of the classical set summary \citep{Cranmer2021_histpool_deepsets}. Hierarchical pooling instead coarsens the graph in stages \citep{Ying2018_diffpool_pooling}. In the end, we can understand the pooling/aggregation function as any statistically meaningful summary of the neighbourhood or graph: minimum, maximum, mean, variance, and onward. 
 % Invariant summaries of this kind are, in a precise sense, all one ever needs \citep{Villar2021_scalars_universal}.
 
-It should be noted that any composition of permutation-invariant pooling functions itself constitutes a valid permutation-invariant pooling function. Indeed, it may often be beneficial to do so. We can, for example, concatenate the sum, variance, maximum, and minimum across the latent variables, resulting in a $4 \cdot N_\mathrm{lat}$-dimensional vector that can then be used for further calculation. To fully capture continuous features, it is in fact necessary to use multiple aggregators \citep{Corso2020_PrincipalNeighborhoodAggregation}. While this additional information about the latents is useful, one must caution that the increased dimensionality can complicate optimisation significantly. The result of the trade-off is not obvious \textit{a priori}. However, if one is having trouble optimising a GNN, it is worthwhile trying to shrink or expand the number of aggregation functions.     
+It should be noted that any composition of permutation-invariant pooling functions itself constitutes a valid permutation-invariant pooling function. Indeed, it may often be beneficial to do so. We can, for example, concatenate the sum, variance, maximum, and minimum across the latent variables, resulting in a $4 \cdot N_\mathrm{lat}$-dimensional vector that can then be used for further calculation. To fully capture continuous features, it is in fact necessary to use multiple aggregators \citep{Corso2020_PrincipalNeighbourhoodAggregationGraph}. While this additional information about the latents is useful, one must caution that the increased dimensionality can complicate optimisation significantly. The result of the trade-off is not obvious \textit{a priori}. However, if one is having trouble optimising a GNN, it is worthwhile trying to shrink or expand the number of aggregation functions.     
 
 % claude, I've put in a lot of new references for this section, let's work through it a bit
 \subsection{Symmetries in message passing}
@@ -648,6 +675,8 @@ CKJ wishes to thank Marielle Côté-Gendreau for ever-present help with formulat
 
 Copy-editing and writing code for constructing figures for this work were aided by Claude-Opus-5. The literature search, original writing, structure, ideas, and validation of this work are entirely due to the author.
 \end{acknowledgement}
+
+\ifarxiv\printreferences\fi
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -676,10 +705,7 @@ a convolution of the signal with the kernel $\mathbf{w}$. The converse holds by 
 
 Third, diagonalise. All circulant matrices share one set of eigenvectors, the discrete plane waves $e^{2\pi i kn/N}$, which are exactly the eigenvectors of the shift itself. In that basis every convolution acts as a pointwise multiplication, which is the convolution theorem, and the kernel's eigenvalues are its Fourier coefficients. This is the door through which the graph enters: on a graph the role of the shift passes to the adjacency or the role of the plane waves to their eigenvectors, and a filter diagonal in that eigenbasis is the spectral graph convolution of \hyperref[app:sym:scale]{Appendix~1}.
 
-\clearpage
-
-\bibliographystyle{aasjournal}   % spbasic.bst absent from Overleaf; aasjournal compiles
-\bibliography{ref}
+\ifarxiv\else\printreferences\fi% spbasic.bst absent from Overleaf; aasjournal compiles in both modes
 
 
 
