@@ -2,14 +2,14 @@
 
 15 Oct 2026, late. Pruned: everything resolved now lives in git history, not here. GROUND RULE unchanged: items from the Josh/Claude doc and Wu's mail are asks, not tasks — nothing goes in without CKJ's approval of that specific point. Flags: 🟡 partly addressed · ⬜ open · 💬 needs a decision or a rework done together.
 
+## Priority — from the face-to-face with Josh (added 15 Oct)
+
+- **J1 — Gentler on-ramp to the mathematics** ⬜ Josh: "it sets on quite fast." Three remedies on the table, combinable: (a) introduce each new symbol in plain words at first use — the blueprint box currently lands $\Omega$, $G$, $g.x$, $B$, $\sigma$, $P$, $A$ and the composition chain in one go, and $g.x$ (the group action) is never unpacked in the main text; (b) a short bridge where \S4 begins its equations, mapping blueprint symbols to message-passing symbols ($B$ = one round of message passing, assembled from $\psi$, the aggregator, and $\phi$; $P$ = the coarsening/pooling of the practical sections; $A$ = the invariant global readout; $G = \Sigma_n$ on the graph) — the chapter already uses this "plays the role of" device for the force law, so the bridge can mirror it; (c) optionally, a compact notation line-up, though the chapter is already box-heavy. Recommended: (a) + (b).
+- **J2 — Best Practices restructure** 💬 CKJ's reorg into General vs Practical, with his in-file note at the Practical subsection asking for input on how to structure the two. Claude's read and recommendation sent 15 Oct (short version: the true split as the content stands is design-time decisions vs working practices, so relabel the pillars to match and shorten their colon-list titles; optionally move "When not to use a GNN" to the front of the first pillar as the gate). Pillar intros remain tabled until the structure settles.
+
 ## A. Comments-doc items still open (numbering follows the doc)
 
-- **Item 2 —** **Sim-to-real bullet + Fig. 1.11 caption (§1.7)** 🟡 "The domain shift typically stays small" still sits oddly beside "the single most consequential gap"; the de Santi caption still asserts "carefully invariantised inputs buy this robustness" as fact — soften to attribution unless they ran that ablation.
 - **Item 5 —** **Abstract/§1.9 numbers** ⬜ Update the numbers (the 1-in-6 stat and the paper counts) once the review rounds are done.
-- **Item 6 —** **Causality and receiver-dependence (§1.4.2, §1.6.1)** ⬜💬 Both passages argue the receiver is barred by the arrow of time. My read: the reviewer is right — directedness already enforces causality, and a progenitor→descendant message may legally read the descendant's state. The uniform-time-step argument carries the SAGEConv choice alone. Reword both spots; five minutes of discussion first.
-- **Item 7 —** **The permutation half of the blueprint pointer (§1.2.3)** ⬜ The appendix pointer covers a translation-only proof. Smallest fix: cite Zaheer et al. Lemma 3 and reword. Fuller fix: an Appendix 2.2 with the permutation derivation — CKJ's call.
-- **Item 9 —** **Attention advice vs Table 1.2** ⬜ "Tends to train unstably" unscoped against the three attentional successes in the table (Kololgi, Iqbal, Spina). Scope it to the tested tasks or say what differs.
-- **Item 11 —** **Lensing ≠ attention (§1.4.2)** 💬 CKJ's own note; rework agreed in principle. The a(x_u, x_v, e_uv) edit half-rescues lensing via edge features, but receiver-dependence stays absent. Candidates: the driven oscillator (same forcing, response set by the receiver's eigenfrequency), or Doppler-selective absorption (the receiver's velocity decides how loudly the line lands).
 - **Item 21 —** **Fig. 1.17 reproducibility** 💬 Criteria stated, per-paper classification published, counts consistent. Proposal: papers_per_year.py already holds the classification — have it emit an appendix table (one row per analysis) so figure, table, and text draw from one source. Folds in CKJ's rerun note.
 - **Item 23 —** **Wrong-kind sources** ⬜ Jespersen 2021 (project webpage) cited twice; Yang & Yu among the Ω_m/σ₈ GNNs; Rossi entry bare. Decisions, then mechanics.
 - **Item 24 —** **Bibliography mechanics** ⬜ Residue after the round-3 dedup and ampersand fixes: Iqbal entry completion (A&A 704, A334), preprint-vs-publication year convention, and the bibtex warnings (Ting2026 extra pages field, undefined month string "july", pascal_pensees author+editor clash, Thiele2026 empty publisher/pages).
@@ -17,7 +17,8 @@
 ## B. CKJ's % comments and placeholders in main.tex
 
 - (All stale comments are stripped as of 15 Oct; the Villar line is deleted per CKJ.)
-- **L570** "% Some text here" — the "General Considerations" pillar needs its intro paragraph; its sibling "Practical Considerations" intro deserves the same look (CKJ's reorg weigh-in: the general pillar should promise *judgement*, the practical pillar *habits*; "with a eye on pitfalls" typo). Drafting TABLED 15 Oct: first candidates rejected — the intros must sound human, in plain prose, with no constructed one-liners.
+- **L618** CKJ's in-file note asking for input on the two-pillar structure (= J2).
+- **L569** "% Some text here" — the "General Considerations" pillar needs its intro paragraph; its sibling "Practical Considerations" intro deserves the same look (CKJ's reorg weigh-in: the general pillar should promise *judgement*, the practical pillar *habits*; "with a eye on pitfalls" typo). Drafting TABLED 15 Oct: first candidates rejected — the intros must sound human, in plain prose, with no constructed one-liners.
 
 ## C. Wu round, open
 
@@ -30,8 +31,7 @@ W5. **Domain vs signal needs clarifying (Wu was confused)** ⬜ Cheapest first: 
 ## D. Next up (CKJ picks)
 
 1. **Figure-rerun batch**: papers_per_year.py with stated criteria + the appendix classification table (item 21), and domain_signal_model.py with the typo, quarter-turns, and $D(4)$ fixes (W1, W5-iv).
-2. **Talking sessions**: causality/receiver-dependence (6), the attention metaphor (11, in discussion), attention-instability scoping (9).
-3. **Claims sweep**: 2, 7, 23 (+ the end-of-rounds number refresh, item 5).
+3. **Claims sweep**: 23 (+ the end-of-rounds number refresh, item 5).
 4. **Pillar intros (tabled)**: General ("% Some text here") and Practical — resume when CKJ wants, in a human voice.
 
 ## E. Final clean-up (endgame, after the rounds)
