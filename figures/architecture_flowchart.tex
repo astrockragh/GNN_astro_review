@@ -6,7 +6,7 @@
   question/.style={diamond, aspect=2.6, draw=black!70, fill=rowhl, align=center, inner sep=1pt, text width=30mm},
   answer/.style={rectangle, rounded corners=2pt, draw=black!70, fill=black!4, align=center, text width=30mm, inner sep=4pt},
   final/.style={rectangle, rounded corners=2pt, draw=black!85, thick, fill=rowhl!60, align=center, text width=32mm, inner sep=5pt},
-  advice/.style={rectangle, rounded corners=2pt, draw=black!50, dashed, fill=white, align=center, text width=66mm, inner sep=5pt},
+  advice/.style={rectangle, rounded corners=2pt, draw=black!50, dashed, fill=white, align=center, text width=71mm, inner sep=5pt},
   arrow/.style={-{Stealth[length=2.4mm]}, black!70},
   lab/.style={font=\scriptsize\itshape, fill=white, inner sep=1pt},
 ]
@@ -18,7 +18,7 @@
 \node[question, below=of impose] (msg) {Message must depend on edge or receiver features?};
 \node[final, below left=8mm and 2mm of msg] (sage) {\texttt{SAGEConv}\\ \scriptsize cheap, stable, convolutional};
 \node[final, below right=8mm and 2mm of msg] (mp) {Full message passing\\ \scriptsize expressive, costlier};
-\node[advice, below=16mm of msg] (start) {Whatever the path: start with the \textbf{sum} aggregator and two to three layers. Beat the Deep Set and summary-statistic baselines before trusting the graph};
+\node[advice, below=16mm of msg] (start) {Whatever the path: start with the \textbf{sum} aggregator and two to three layers depth. Try the Deep Set and summary-statistic baselines before reaching for the GNN.};
 
 \draw[arrow] (grid) -- node[lab] {yes} (cnn);
 \draw[arrow] (grid) -- node[lab] {no} (edges);
@@ -28,6 +28,6 @@
 \draw[arrow] (impose) -- (msg);
 \draw[arrow] (msg) -- node[lab] {no} (sage);
 \draw[arrow] (msg) -- node[lab] {yes} (mp);
-\draw[arrow, black!50, dashed] (sage.south) to[out=-90, in=170] (start.west);
-\draw[arrow, black!50, dashed] (mp.south) to[out=-90, in=10] (start.east);
+\draw[arrow, black!70, dashed] (sage.south) to[out=-170, in=170] (start.west);
+\draw[arrow, black!70, dashed] (mp.south) to[out=-10, in=10] (start.east);
 \end{tikzpicture}
