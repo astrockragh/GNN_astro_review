@@ -76,3 +76,11 @@ W5. **Domain vs signal needs clarifying (Wu was confused)** ⬜ Suggestions, che
   (iii) A small svgraybox "The domain and the signal" — the chapter already teaches by grey box (inductive bias, blueprint, inductive/transductive); a fourth fits the house style and gives the distinction a findable home.
   (iv) Bundle the panel-label touch-up into the figure rerun.
   Recommended: (i)+(ii) now, (iii) if you want the distinction promoted to furniture, (iv) with the rerun batch.
+
+## Round 2 (15 Oct, afternoon)
+
+- DONE: Fig `graph_anatomy` rerun, "Who links to whom" -> "What links to what" (mpl 3.7.2 pinned to match original render); PNG + script on disk. CKJ's %claude comment at the figure still in main.tex, deletion offered.
+- DONE (dictated): S2.1 "The lesson repeats throughout this chapter, so we state it once and plainly:" -> "The lesson repeats throughout this chapter:".
+- DONE: svgraybox text now equidistant from left/right borders (preamble redefinition in main.tex, 12pt/12pt margins, no reflow; was 0pt/24pt). Applies to all three boxes + any future ones.
+- PROPOSED, awaiting CKJ: group-definitions note near Fig 1 (D_4, SO(2), O(3), E(3), Sigma_n; placement in-text after the Fig 1 reference vs in-caption; optional D8-naming footnote answering Wu).
+- PROPOSED, awaiting CKJ: list of common astro symmetry groups in S2 (suggested home: svgraybox at end of S2.2); group menu sent for selection.

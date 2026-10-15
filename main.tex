@@ -49,6 +49,10 @@
                        % your makeindex program
 
 
+% svgraybox ships with 0pt left / 24pt right inner margins, which presses the text against the left border of the grey panel.
+% Equal 6pt margins centre the text block; delete this block to restore the class default (0pt/24pt).
+\renewenvironment{svgraybox}{\fboxsep=12pt\relax\begin{shaded}\list{}{\leftmargin=6pt\rightmargin=6pt\topsep=0pt\relax}\expandafter\item\parindent=\svparindent\hskip-\listparindent}{\endlist\end{shaded}}
+
 \begin{document}
 
 
@@ -120,12 +124,35 @@ This chapter proceeds in three movements: the geometry of learning and the geome
 When we master a few foundational principles, we can always \emph{derive}, rather than memorise, the right architecture\footnote{The right architecture will often turn out to be a GNN.} for the problem before us.
 The recipe takes only a few inputs -- the problem we pose, the signal we aim to measure, the domains on which the data and signal live, and the symmetries to respect -- and then returns the architecture to use. In the following sections, we show how to define the geometry of the data domain, and that of the signal, introduce the necessary language of symmetry, and assemble the blueprint from which any modern deep-learning architecture, be it the CNN, the Transformer, or the GNN, descends.
 
+\begin{svgraybox}
+\textcolor{red}{\textbf{Symmetry groups and how to read their names.} A group collects the transformations that leave a system recognisably itself. Three facts make the collection a group: two transformations composed give a third, every transformation can be undone, and ``do nothing'' belongs as the identity (\hyperref[app:symmetries]{Appendix~1} supplies the formal definition and the representation theory). A capital letter names the kind of transformation, and the number in parentheses counts the dimensions of the space it acts on:}
+\begin{itemize}
+  \item \textcolor{red}{\textbf{T} -- translations: $T(3)$ shifts three-dimensional space.}
+  \item \textcolor{red}{\textbf{S} -- \emph{special}, a prefix: keep only the orientation-preserving half of a group, with its reflections dropped.}
+  \item \textcolor{red}{\textbf{O} -- orthogonal: the rotations and reflections that preserve lengths and angles.}
+  \item \textcolor{red}{\textbf{U} -- unitary: the rotations of complex space, the home of phases.}
+  \item \textcolor{red}{\textbf{E} -- Euclidean: translations, rotations, and reflections together.}
+  \item \textcolor{red}{\textbf{D} -- dihedral: the discrete rotations and flips of a regular polygon, where the number instead counts the sides.}
+\end{itemize}
+\textcolor{red}{The groups that carry most of astrophysics:}
+\begin{itemize}
+  \item \textcolor{red}{$T(3)$ -- statistical homogeneity; the convolutional network inherits its discrete version on the pixel grid.}
+  \item \textcolor{red}{$SO(2)\cong U(1)$ -- rotation about a single axis: the position angle of a galaxy on the sky, the phase of a periodic light curve.}
+  \item \textcolor{red}{$SO(3)$ -- rotations of three-dimensional space: isotropy, and full-sky maps on the celestial sphere.}
+  \item \textcolor{red}{$O(3)$ -- rotations joined by reflections: parity, which gravity conserves and galaxy-spin handedness probes.}
+  \item \textcolor{red}{$SE(3)$ and $E(3)$ -- every rigid motion of a point cloud, without or with reflections: the groups of the equivariant architectures of \S\ref{subsec:equivariant-mp}.}
+  \item \textcolor{red}{$D(4)$ -- what pixelisation leaves of $SO(2)$: the quarter-turns and flips of the square grid, and the standard augmentation group of galaxy-morphology work.}
+  \item \textcolor{red}{$\Sigma_n$ -- the $n!$ relabellings of $n$ objects, its count worn as a subscript: the native group of the catalogue, the graph, and this chapter.}
+\end{itemize}
+\textcolor{red}{Other groups walk the astrophysical stage as well -- the Lorentz group of special relativity, the Galilean boosts between inertial frames, the dilations of self-similar collapse -- and when a problem keeps one of these symmetries, the blueprint of \S\ref{subsec:blueprint} casts that group in the leading role.}
+\end{svgraybox}
+
 \subsection{The geometries of the domain, the signal, and the model}
 \label{subsec:domain-signal}
 
 Any learning problem contains three geometries: that of the domain on which the data exist, that of the signal we wish to infer, and that of the model. These are shown in Figure~\ref{fig:domain_signal}. A good model respects the geometries of both the domain and the signal. The geometry of the \emph{domain} comes first: the support on which the data live, a regular grid, a sphere, an irregular point cloud, a graph. The geometry of the \emph{signal} comes second: the structure of the field defined on that support, which carries its own symmetries, a scalar temperature, a vector velocity, a tensor shear, on whatever space we happen to observe it.
 
-The lesson repeats throughout this chapter, so we state it once and plainly: choose the algorithm that respects the native geometry of both the domain and the signal (see Table~\ref{tab:gdl_architectures}). Impose no symmetry the data lack, and discard none they hold. A convolutional network presumes a regular grid; run it on a sphere or an irregular detector and you must necessarily first voxelise, and so invent a translational structure that does not exist, biasing the learning. Where the domain turns irregular, the graph is often not a stylistic preference but the only faithful description.
+The lesson repeats throughout this chapter: choose the algorithm that respects the native geometry of both the domain and the signal (see Table~\ref{tab:gdl_architectures}). Impose no symmetry the data lack, and discard none they hold. A convolutional network presumes a regular grid; run it on a sphere or an irregular detector and you must necessarily first voxelise, and so invent a translational structure that does not exist, biasing the learning. Where the domain turns irregular, the graph is often not a stylistic preference but the only faithful description.
 
 \begin{figure}[p]
 \centering
