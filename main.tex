@@ -8,7 +8,7 @@
 %%   \arxivtrue   -> standalone arXiv: no chapter line, sections 1, 2, 3,
 %%                   full title, author-year citations, references before the appendices.
 \newif\ifarxiv
-\arxivtrue
+\arxivfalse
 %% ======================================================
 \ifarxiv\usepackage{natbib}\else\usepackage[numbers,sort&compress]{natbib}\fi
 \newcommand{\pcite}[1]{\ifarxiv\citealp{#1}\else\citep{#1}\fi}% citation inside parentheses, correct in both modes
@@ -248,7 +248,7 @@ Before we learn on a graph, we will define what a graph is and how to build one.
 
 We define the graph as the triplet $G=(V,E,U)$: $V=\{\mathbf{x}_i\}_{i=1:N^v}$ holds the node feature vectors\footnote{The node feature vector is often written $\mathbf{v}_i$ in the machine-learning literature, with $v$ for vertex. We keep $\mathbf{x}_i$ for the features and reserve $v$ for the node itself.}; $E=\{(\mathbf{e}_k,r_k,s_k)\}$ holds the edge feature vectors, each tied to a receiver $r_k$ and a sender $s_k$; and $U$ holds the global, graph-level feature vector, after the notation of \citet{Battaglia2018_relational_GN}. The connectivity also admits a complimentary description through the binary adjacency matrix $A$, with $A_{ij}=1$ to mark the existence of an edge. $A$ is thus not independent from the typical description of $G$, as it can be constructed fully from $E$ without regard to the actual edge features, but the matrix description of $A$ is highly useful for understanding and computation alike. The real graph often runs sparse, so in practice one can obtain a compact description of A by storing not the dense $N\times N$ matrix but the \emph{edge index}, the two rows of sender and receiver indices, the form on which message passing actually runs.
 
-A graph is either directed or undirected, and the physics of the relation should decide which. Directed edges suit the asymmetric, the causal, the time-ordered: a merger tree points forward in time, since to pass information backwards breaks causality. Undirected edges, a symmetric $A$, suit the symmetric relation: spatial proximity, a chemical bond, a pairwise gravitational pull. The \emph{neighbourhood} $\mathcal{N}(u)$ collects the nodes joined to $u$, and on it rests the whole notion of locality that follows. These structures are shown in Figure~\ref{fig:graph_anatomy}.
+A graph is either directed or undirected, and the physics of the relation should decide which. Directed edges suit the asymmetric, the causal, the time-ordered: a merger tree points forward in time, since to pass information backwards breaks causality. Undirected edges, a symmetric $A$, suit the symmetric relation: spatial proximity, a chemical bond, a pairwise gravitational pull. The \emph{neighbourhood} $\mathcal{N}(i)$ collects the nodes joined to $i$, and on it rests the whole notion of locality that follows. These structures are shown in Figure~\ref{fig:graph_anatomy}.
 
 \begin{figure}[h]
 \centering
@@ -314,22 +314,22 @@ A Graph Neural Network rests on one repeated idea: pass the message along the ed
 \subsection{The anatomy of a message-passing layer}
 \label{subsec:message-passing}
 
-A single message-passing layer does three things, and the physicist has done all three before. Each node first receives messages from its neighbours produced from a learnable function ($\psi$). Next, a permutation-invariant neighbourhood aggregator ($\bigoplus$) pools them across the neighbour of the node ($\mathcal{N(u)}$). Finally, the node updates its state to $\mathbf{h}_u$\footnote{$\mathbf{h}$ is used to designate a hidden state, whereas $\mathbf{x}$ typically denotes the original input features.} using a learnable function ($\phi$) on its own features and the neighbourhood aggregate:
+A single message-passing layer does three things, and the physicist has done all three before. Each node first receives messages from its neighbours produced from a learnable function ($\psi$). Next, a permutation-invariant neighbourhood aggregator ($\bigoplus$) pools them across the neighbour of the node ($\mathcal{N(u)}$). Finally, the node updates its state to $\mathbf{h}_i$\footnote{$\mathbf{h}$ is used to designate a hidden state, whereas $\mathbf{x}$ typically denotes the original input features.} using a learnable function ($\phi$) on its own features and the neighbourhood aggregate:
 
 \begin{equation}
     \label{eq:first_mp}
-  \mathbf{h}_u \;=\; \phi\!\Big(\mathbf{x}_u,\ \bigoplus_{v\in\mathcal{N}(u)}
-        \psi(\mathbf{x}_u,\mathbf{x}_v,\mathbf{e}_{uv})\Big).  
+  \mathbf{h}_i \;=\; \phi\!\Big(\mathbf{x}_i,\ \bigoplus_{j\in\mathcal{N}(i)}
+        \psi(\mathbf{x}_i,\mathbf{x}_j,\mathbf{e}_{ij})\Big).  
 \end{equation}
 
-The two learnable functions are typically represented by weight matrices $\mathbf{W}$ which can then efficiently act on the input feature vectors $\mathbf{x}$. Equation \ref{eq:first_mp} shows the most general message passing layer. Message passing can then be constrained to more specific forms given the task at hand --- this is the subject of the following section. At its simplest the layer reads $\mathbf{x}_i' = \mathbf{W}_1\cdot\mathbf{x}_i + \mathbf{W}_2\,\cdot\mathrm{mean}_{j\in\mathcal{N}(i)}\mathbf{x}_j$. This is the original \texttt{SAGEConv} layer of the \texttt{GraphSAGE} architecture \citep{Hamilton2017_GraphSAGE_inductive}. The original \texttt{SAGEConv} layer was defined with the mean aggregator but it can be swapped for any permutation-invariant aggregator ---\footnote{All em-dashes in this work are organic and grass-fed.} like a sum. The form looks familiar for a reason: it is similar to a gravitational $N$-body update. Step the velocity of body $i$ forward, and the contributions of all other masses simply superpose:
+The two learnable functions are typically represented by weight matrices $\mathbf{W}$ which can then efficiently act on the input feature vectors $\mathbf{x}$. Equation \ref{eq:first_mp} shows the most general message passing layer.\footnote{\textcolor{red}{The two index orders differ by tradition: the adjacency names the sender first, so the edge that carries this message has $A_{ji}=1$, while the message function and its edge feature $\mathbf{e}_{ij}$ name the receiver first, the habit of the GNN literature.}} Message passing can then be constrained to more specific forms given the task at hand --- this is the subject of the following section. At its simplest the layer reads $\mathbf{x}_i' = \mathbf{W}_1\cdot\mathbf{x}_i + \mathbf{W}_2\,\cdot\mathrm{mean}_{j\in\mathcal{N}(i)}\mathbf{x}_j$. This is the original \texttt{SAGEConv} layer of the \texttt{GraphSAGE} architecture \citep{Hamilton2017_GraphSAGE_inductive}. The original \texttt{SAGEConv} layer was defined with the mean aggregator but it can be swapped for any permutation-invariant aggregator ---\footnote{All em-dashes in this work are organic and grass-fed.} like a sum. The form looks familiar for a reason: it is similar to a gravitational $N$-body update. Step the velocity of body $i$ forward, and the contributions of all other masses simply superpose:
 \[
   \mathbf{v}_i^{t+1} \;=\; \mathbf{v}_i^{t}
     + \Delta t \sum_{j\neq i}
       \frac{G\,m_j(\mathbf{x}_j^{t}-\mathbf{x}_i^{t})}
            {|\mathbf{x}_j^{t}-\mathbf{x}_i^{t}|^{3}} .
 \]
-The carry-forward term plays $\phi(\mathbf{x}_u,\cdot)$; the pairwise pull $G m_j(\mathbf{x}_j-\mathbf{x}_i)/r^3$ plays the edge message $\psi$; the sum over bodies plays the permutation-invariant aggregator. A GNN layer, then, amounts to a learnable, generalised force law plus a one-step integrator, which explains why message passing feels native to the physicist, and why the learned edge function so often can be read back as a physical force through interpretability techniques \citep{Cranmer2019_symbolicphysics_GNN, Lemos2023_orbitalmechanics_symbolic}.
+The carry-forward term plays $\phi(\mathbf{x}_i,\cdot)$; the pairwise pull $G m_j(\mathbf{x}_j-\mathbf{x}_i)/r^3$ plays the edge message $\psi$; the sum over bodies plays the permutation-invariant aggregator. A GNN layer, then, amounts to a learnable, generalised force law plus a one-step integrator, which explains why message passing feels native to the physicist, and why the learned edge function so often can be read back as a physical force through interpretability techniques \citep{Cranmer2019_symbolicphysics_GNN, Lemos2023_orbitalmechanics_symbolic}.
 
 \subsection{Common propagation layers}
 \label{subsec:flavours}
@@ -337,16 +337,16 @@ The carry-forward term plays $\phi(\mathbf{x}_u,\cdot)$; the pairwise pull $G m_
 The message passing layer defined above can be constrained and sorted into three canonical groups \citep{Bronstein2021_geometricDL_book, Velickovic2022_messagepassing_up}, in order of rising expressivity and rising cost. With aggregator $\bigoplus$ and learnable maps $\psi,\phi$:
 \begin{align}
 \text{Message passing:}\quad
-  \mathbf{h}_u &= \phi\!\Big(\mathbf{x}_u, \textstyle\bigoplus_{v\in\mathcal{N}_u}
-       \psi(\mathbf{x}_u,\mathbf{x}_v,\mathbf{e}_{uv})\Big).\\
+  \mathbf{h}_i &= \phi\!\Big(\mathbf{x}_i, \textstyle\bigoplus_{j\in\mathcal{N}_i}
+       \psi(\mathbf{x}_i,\mathbf{x}_j,\mathbf{e}_{ij})\Big).\\
 \text{Attentional:}\quad
-  \mathbf{h}_u &= \phi\!\Big(\mathbf{x}_u, \textstyle\bigoplus_{v\in\mathcal{N}_u}
-       a(\mathbf{x}_u,\mathbf{x}_v, \mathbf{e}_{uv})\cdot\psi(\mathbf{x}_v)\Big), \\
+  \mathbf{h}_i &= \phi\!\Big(\mathbf{x}_i, \textstyle\bigoplus_{j\in\mathcal{N}_i}
+       a(\mathbf{x}_i,\mathbf{x}_j, \mathbf{e}_{ij})\cdot\psi(\mathbf{x}_j)\Big), \\
 \text{Convolutional:}\quad
-  \mathbf{h}_u &= \phi\!\Big(\mathbf{x}_u, \textstyle\bigoplus_{v\in\mathcal{N}_u}
-       c_{vu}\cdot\psi(\mathbf{x}_v)\Big),
+  \mathbf{h}_i &= \phi\!\Big(\mathbf{x}_i, \textstyle\bigoplus_{j\in\mathcal{N}_i}
+       c_{ij}\cdot\psi(\mathbf{x}_j)\Big),
 \end{align}
-The convolutional layer fixes the neighbour weight $c_{vu}$ (GCN; \pcite{Kipf2016_GCN_semisupervised}); the attentional layer learns a scalar weight $a(\mathbf{x}_u,\mathbf{x}_v)$ (GAT; \pcite{Velickovic2017_GAT_attention}); the message-passing layer computes a full vector message per edge (MPNN). To ascend the list buys expressivity at the cost of efficiency and compute (Figure~\ref{fig:flavours}).
+The convolutional layer fixes the neighbour weight $c_{ij}$ (GCN; \pcite{Kipf2016_GCN_semisupervised}); the attentional layer learns a scalar weight $a(\mathbf{x}_i,\mathbf{x}_j)$ (GAT; \pcite{Velickovic2017_GAT_attention}); the message-passing layer computes a full vector message per edge (MPNN). To ascend the list buys expressivity at the cost of efficiency and compute (Figure~\ref{fig:flavours}).
 
 \emph{Expressivity} here means the range of functions the layer can represent. Its formal theory, the Weisfeiler--Lehman ceiling, matters more to computer science than to astrophysics, but the interested can find it in \hyperref[app:sym:wl]{Appendix~1}. The message-passing picture suffices for everything that follows.
 
@@ -372,7 +372,7 @@ Because the inner workings of GNNs inherently resemble both communication in a s
 \textbf{GNN Flavours as Physical Laws:} Physical systems perform the same update: the state $x_i$ of an object passes through an interaction with its neighbours and arrives at the new state $h_i$. We select the layer type according to which information the interaction may access. Here, we give some examples of physical systems carrying the structures of each layer:
 \begin{itemize}
     \item \textbf{Convolutional}: Temporal graphs encoding halo growth (merger trees) neatly represent this layer (see Figure~\ref{fig:merger_tree}). The descendant halo assembles as the unweighted sum over its progenitors --- fixed time sampling fixes every edge weight to unity, \textcolor{red}{and the arrow of time bars the receiver from changing the message. The update of the descendant is set only by the current state and what it inherits directly from the past.} What merging does to spin, concentration, and assembly history hides inside $\phi$.
-    \item \textbf{Attentional}: \textcolor{red}{Picture two pendulums on a shared beam. The first swings and its motion thus plays the message. The beam, acting as our edge, carries the vibration across, and the beam's stiffness and damping impact to what degree the message survives the crossing. This is the role of the edge features $\mathbf{e}_{uv}$. How strongly the second oscillator answers depends on its own tuning. Driven at resonance it swings eagerly, while the same vibration passes a detuned oscillator by. The attention weight $a(\mathbf{x}_u, \mathbf{x}_v, \mathbf{e}_{uv})$ is exactly this uptake, set jointly by the sender's swing, the beam between them, and the receiver's own frequency. A node with many neighbours rests on many beams and listens selectively, amplifying the neighbours it is tuned to and damping the rest. The message is \textit{rescaled}, never \textit{rewritten}: the receiver takes up more or less of the same vibration, exactly as the attentional layer.}
+    \item \textbf{Attentional}: \textcolor{red}{Picture two pendulums on a shared beam. The first swings and its motion thus plays the message. The beam, acting as our edge, carries the vibration across, and the beam's stiffness and damping impact to what degree the message survives the crossing. This is the role of the edge features $\mathbf{e}_{ij}$. How strongly the second oscillator answers depends on its own tuning. Driven at resonance it swings eagerly, while the same vibration passes a detuned oscillator by. The attention weight $a(\mathbf{x}_i, \mathbf{x}_j, \mathbf{e}_{ij})$ is exactly this uptake, set jointly by the sender's swing, the beam between them, and the receiver's own frequency. A node with many neighbours rests on many beams and listens selectively, amplifying the neighbours it is tuned to and damping the rest. The message is \textit{rescaled}, never \textit{rewritten}: the receiver takes up more or less of the same vibration, exactly as the attentional layer.}
     \item \textbf{Full message-passing}: The tidal interaction between two galaxies realises the full message-passing layer. The perturbation depends on the mass and structure of each galaxy, and on the orbit that connects them: the prograde encounter tears out a tidal tail where the retrograde encounter at the same separation leaves the disc nearly untouched. No scalar weight can ever rescale one outcome into the other; the message itself must change form.
 \end{itemize}
 
