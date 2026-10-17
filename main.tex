@@ -213,10 +213,7 @@ Stack the equivariant blocks (with non-linearities and optional coarsening) and,
 
 To see the recipe at work, we can derive different neural architectures from first principles. Since we often hold a firm intuition for the image and a shakier one for the graph, let us lead with the more familiar case of the convolutional neural network. We demand three things \emph{a priori} of a model that acts on an image: translational \emph{equivariance} of its internal operations, scale separation, and translational \emph{invariance} of its output. The first demand decides everything. Imagine translating a dog across an image --- the filter which identifies it must clearly follow the dog. To insist that a local linear operation commute with every translation, that is, to insist on translational equivariance, forces it to share weights across the image, that is, to become a \emph{convolution} (\hyperref[app:conv-proof]{Appendix~2} contains the proof). Scale separation, the premise that one may coarsen the signal, justifies the interleaved \emph{pooling} that stacks these convolutions into a multiscale hierarchy; a dog stays a dog across scale. We then finally demand that the \emph{global output} (i.e. is there a dog here or not?) ignore position, and a single \emph{global pooling} delivers it. Reassembled, the parts make exactly the familiar convolutional network, a direct consequence the blueprint above with the group set to translation.
 
-The same demands, made on a graph, hand us the GNN. Demand permutation equivariance of the internal operations and locality along the edges; the permutation-equivariant linear layer on a set is forced into the form that can be described as ``itself plus one shared aggregation over the rest''. This result is proven as Lemma 3 of the DeepSet approach of \citet{Zaheer2017_deepsets}, and we redo a version of it in \hyperref[app:conv-proof]{Appendix~2}. Once locality is added through the graph neighbourhood, the result is message passing, the layer \S\ref{sec:gnn} builds in full. Demand finally a permutation-invariant output where the signal is a graph-level scalar, and a global pooling delivers it. The CNN and the GNN thus fall out of one recipe, with only the group exchanged. The same recipe, with a different group and a different notion of locality, yields the other model architectures. The transformer becomes the blueprint on a fully connected graph, where the attention coefficients \citep{Vaswani2017_transformer_attention} act as a learned, soft adjacency, and the deep set becomes the blueprint on a set, the edgeless version of a graph. Each of these is more highly optimised for their specialised use cases than the general GNN, but they all descend from one unified geometric principle.
-
-Table~\ref{tab:gdl_architectures} collects the common architectures as instances of the geometric blueprint,\footnote{Geometric deep learning typically contains five families of domains, the ``five Gs'': the grid, the group, the graph, the geodesic, and the gauge \citep{Bronstein2021_geometricDL_book}. For topological and higher-order domains, see \citet{Papillon2025_beyondeuclid_geometric}.} and marks the one this chapter pursues.
-
+The same demands, made on a graph, hand us the GNN. Demand permutation equivariance of the internal operations and locality along the edges: with the group set to $G=\Sigma_n$, the question becomes which layers $B$ commute with every relabelling; the permutation-equivariant linear layer on a set is forced into a form that can be described as ``itself plus one shared aggregation over the rest''. This result is proven as Lemma 3 of the DeepSet approach of \citet{Zaheer2017_deepsets}, and we redo a version of it in \hyperref[app:conv-proof]{Appendix~2}. Once locality is added through the graph neighbourhood, the result is message passing: the lemma's ``itself'' becomes the node update $\phi$, and the shared aggregation becomes learned messages $\psi$ collected over the neighbourhood by any permutation-invariant aggregator, usually written as $\bigoplus$. This is exactly the layer which \S\ref{sec:gnn} builds in full. If we are doing a task where the signal is a graph-level scalar, we may finally demand a permutation-invariant output, and a global pooling delivers it. The CNN and the GNN thus fall out of one recipe, with only the group exchanged. The same recipe, with a different group and a different notion of locality, yields the other model architectures. The transformer becomes the blueprint on a fully connected graph, where the attention coefficients \citep{Vaswani2017_transformer_attention} act as a learned, soft adjacency, and the deep set becomes the blueprint on a set, the edgeless version of a graph. Each of these is more highly optimised for their specialised use cases than the general GNN, but they all descend from one unified geometric principle. Table~\ref{tab:gdl_architectures} collects the common architectures as instances of the geometric blueprint.\footnote{Geometric deep learning typically contains five families of domains, the ``five Gs'': the grid, the group, the graph, the geodesic, and the gauge \citep{Bronstein2021_geometricDL_book}. For topological and higher-order domains, see \citet{Papillon2025_beyondeuclid_geometric}.}
 \begin{table}[t]
 \caption{Common geometric architectures as instances of the geometric deep learning blueprint, after \citet{Bronstein2021_geometricDL_book} (trimmed). The highlighted row marks the GNN, the focus of this chapter.}
 \label{tab:gdl_architectures}
@@ -312,43 +309,46 @@ Beyond these proximity graphs stand the limits met in the list above: the deep s
 \section{Graph Neural Networks}
 \label{sec:gnn}
 
-A Graph Neural Network rests on one repeated idea: pass the message along the edge, aggregate, update the node. We open with the anatomy of a single layer and how it can be intuitively understood as a physical interaction network, then catalogue the common layers, the tasks they serve, and the modules from which we assemble any of the rest.
+A Graph Neural Network rests on one repeated idea: pass the message along the edge, aggregate, update the node. We open with the anatomy of a single layer and how it can be intuitively understood as a physical interaction network, then catalogue the common layers, the tasks they serve, and the modules from which we assemble any of the rest. Throughout, we follow the ideas behind the blueprint of \S\ref{subsec:blueprint} on the graph.
 
 \subsection{The anatomy of a message-passing layer}
 \label{subsec:message-passing}
 
-A single message-passing layer does three things, and the physicist has done all three before. Each node gathers the messages from its neighbours, a permutation-invariant aggregator sums them, and the node updates its state from its own features and from the aggregate:
-\[
+A single message-passing layer does three things, and the physicist has done all three before. Each node first receives messages from its neighbours produced from a learnable function ($\psi$). Next, a permutation-invariant neighbourhood aggregator ($\bigoplus$) pools them across the neighbour of the node ($\mathcal{N(u)}$). Finally, the node updates its state to $\mathbf{h}_u$\footnote{$\mathbf{h}$ is used to designate a hidden state, whereas $\mathbf{x}$ typically denotes the original input features.} using a learnable function ($\phi$) on its own features and the neighbourhood aggregate:
+
+\begin{equation}
+    \label{eq:first_mp}
   \mathbf{h}_u \;=\; \phi\!\Big(\mathbf{x}_u,\ \bigoplus_{v\in\mathcal{N}(u)}
-        \psi(\mathbf{x}_u,\mathbf{x}_v,\mathbf{e}_{uv})\Big).
-\]
-At its simplest the layer reads $\mathbf{x}_i' = \mathbf{W}_1\mathbf{x}_i + \mathbf{W}_2\,\mathrm{mean}_{j\in\mathcal{N}(i)}\mathbf{x}_j$. This is the original \texttt{SAGEConv} layer of the \texttt{GraphSAGE} architecture \citep{Hamilton2017_GraphSAGE_inductive, Jespersen2022_mangrove}. The original \texttt{SAGEConv} layer was defined with the mean aggregator but it can be swapped for any aggregator ---\footnote{All em-dashes in this work are organic and grass-fed.} like a sum. The form looks familiar for a reason: it is similar to a gravitational $N$-body update. Step the velocity of body $i$ forward, and the contributions of all other masses simply superpose:
+        \psi(\mathbf{x}_u,\mathbf{x}_v,\mathbf{e}_{uv})\Big).  
+\end{equation}
+
+The two learnable functions are typically represented by weight matrices $\mathbf{W}$ which can then efficiently act on the input feature vectors $\mathbf{x}$. Equation \ref{eq:first_mp} shows the most general message passing layer. Message passing can then be constrained to more specific forms given the task at hand --- this is the subject of the following section. At its simplest the layer reads $\mathbf{x}_i' = \mathbf{W}_1\cdot\mathbf{x}_i + \mathbf{W}_2\,\cdot\mathrm{mean}_{j\in\mathcal{N}(i)}\mathbf{x}_j$. This is the original \texttt{SAGEConv} layer of the \texttt{GraphSAGE} architecture \citep{Hamilton2017_GraphSAGE_inductive}. The original \texttt{SAGEConv} layer was defined with the mean aggregator but it can be swapped for any permutation-invariant aggregator ---\footnote{All em-dashes in this work are organic and grass-fed.} like a sum. The form looks familiar for a reason: it is similar to a gravitational $N$-body update. Step the velocity of body $i$ forward, and the contributions of all other masses simply superpose:
 \[
   \mathbf{v}_i^{t+1} \;=\; \mathbf{v}_i^{t}
     + \Delta t \sum_{j\neq i}
       \frac{G\,m_j(\mathbf{x}_j^{t}-\mathbf{x}_i^{t})}
            {|\mathbf{x}_j^{t}-\mathbf{x}_i^{t}|^{3}} .
 \]
-The carry-forward term plays $\phi(\mathbf{x}_u,\cdot)$; the pairwise pull $G m_j(\mathbf{x}_j-\mathbf{x}_i)/r^3$ plays the edge message $\psi$; the sum over bodies plays the aggregator; the leading ``$+$'' plays the residual update. A GNN layer, then, amounts to a learnable, generalised force law plus a one-step integrator, which explains why message passing feels native to the physicist, and why the learned edge function so often can be read back as a physical force \citep{Cranmer2019_symbolicphysics_GNN, Lemos2023_orbitalmechanics_symbolic}.
+The carry-forward term plays $\phi(\mathbf{x}_u,\cdot)$; the pairwise pull $G m_j(\mathbf{x}_j-\mathbf{x}_i)/r^3$ plays the edge message $\psi$; the sum over bodies plays the permutation-invariant aggregator. A GNN layer, then, amounts to a learnable, generalised force law plus a one-step integrator, which explains why message passing feels native to the physicist, and why the learned edge function so often can be read back as a physical force through interpretability techniques \citep{Cranmer2019_symbolicphysics_GNN, Lemos2023_orbitalmechanics_symbolic}.
 
 \subsection{Common propagation layers}
 \label{subsec:flavours}
 
-The propagation layer comes in three canonical flavours \citep{Bronstein2021_geometricDL_book, Velickovic2022_messagepassing_up}, in order of rising expressivity and rising cost. With aggregator $\bigoplus$ and learnable maps $\psi,\phi$:
+The message passing layer defined above can be constrained and sorted into three canonical groups \citep{Bronstein2021_geometricDL_book, Velickovic2022_messagepassing_up}, in order of rising expressivity and rising cost. With aggregator $\bigoplus$ and learnable maps $\psi,\phi$:
 \begin{align}
-\text{Convolutional:}\quad
+\text{Message passing:}\quad
   \mathbf{h}_u &= \phi\!\Big(\mathbf{x}_u, \textstyle\bigoplus_{v\in\mathcal{N}_u}
-       c_{vu}\cdot\psi(\mathbf{x}_v)\Big), \\
+       \psi(\mathbf{x}_u,\mathbf{x}_v,\mathbf{e}_{uv})\Big).\\
 \text{Attentional:}\quad
   \mathbf{h}_u &= \phi\!\Big(\mathbf{x}_u, \textstyle\bigoplus_{v\in\mathcal{N}_u}
        a(\mathbf{x}_u,\mathbf{x}_v, \mathbf{e}_{uv})\cdot\psi(\mathbf{x}_v)\Big), \\
-\text{Message passing:}\quad
+\text{Convolutional:}\quad
   \mathbf{h}_u &= \phi\!\Big(\mathbf{x}_u, \textstyle\bigoplus_{v\in\mathcal{N}_u}
-       \psi(\mathbf{x}_u,\mathbf{x}_v,\mathbf{e}_{uv})\Big).
+       c_{vu}\cdot\psi(\mathbf{x}_v)\Big),
 \end{align}
-The convolutional layer fixes the neighbour weight $c_{vu}$ (GCN; \pcite{Kipf2016_GCN_semisupervised}); the attentional layer learns a scalar weight $a(\mathbf{x}_u,\mathbf{x}_v)$ (GAT; \pcite{Velickovic2017_GAT_attention}); the message-passing layer computes a full vector message per edge (MPNN). To descend the list buys expressivity with parameters and compute (Figure~\ref{fig:flavours}).
+The convolutional layer fixes the neighbour weight $c_{vu}$ (GCN; \pcite{Kipf2016_GCN_semisupervised}); the attentional layer learns a scalar weight $a(\mathbf{x}_u,\mathbf{x}_v)$ (GAT; \pcite{Velickovic2017_GAT_attention}); the message-passing layer computes a full vector message per edge (MPNN). To ascend the list buys expressivity at the cost of efficiency and compute (Figure~\ref{fig:flavours}).
 
-\emph{Expressivity} here means the range of functions the layer can represent. Its formal theory, the Weisfeiler--Lehman ceiling, matters more to computer science than to astrophysics, and \hyperref[app:sym:wl]{Appendix~1} holds it. The message-passing picture suffices for everything that follows.
+\emph{Expressivity} here means the range of functions the layer can represent. Its formal theory, the Weisfeiler--Lehman ceiling, matters more to computer science than to astrophysics, but the interested can find it in \hyperref[app:sym:wl]{Appendix~1}. The message-passing picture suffices for everything that follows.
 
 \begin{figure}[p]
 % \centering
