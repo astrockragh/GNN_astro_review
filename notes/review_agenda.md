@@ -10,7 +10,7 @@
 ## Endgame — one full-manuscript pass, in order
 
 1. **Strip dead weight**: reds are gone; 22 plain `%` commented-out lines remain (figure-rerun note included) — list ready for a keep/kill pass whenever CKJ wants.
-2. **Bib prune** (decision pending with CKJ): 200 entries, 168 cited, **32 unused** — grouped list sent in chat 17 Oct: (i) named reserves (Jespersen2026_environment_assembly, Ting2025 textbook, PySR, Lino2021, vanDenEnde2020), (ii) the representation-theory/equivariance library (17 entries: Serre, Fulton–Harris, Folland, Bröcker–tom Dieck, Cohen ×2, Weiler ×2, Kondor ×2, Lang–Weiler, Villar ×2, Deng, Yao, Hainje, Blum-Smith), (iii) graph-ML odds and ends (Dai2018, Liu2019, Qu2019, Shuman2013, You2018, Chatterjee2025, Velickovic2018_DGI — DGI has a natural home in the unsupervised paragraph's "contrastive objectives" clause), (iv) colour (Galileo1623, Sousbie2011, ThorneBlandford2017). Also: Jespersen2026_optical_infrared still wants volume/eid.
+2. **Bib prune** ✅ Resolved 17 Oct: DGI cited by CKJ in the unsupervised paragraph; the remaining 31 orphans kept but parked at the end of ref.bib under the "unused but relevant papers" banner, out of the way and easy to shop from. One residue: Jespersen2026_optical_infrared still wants volume/eid when CKJ has them.
 3. **Title case in titles**: sections title case, subsections sentence case — lone outlier "Cosmology and Large-Scale Structure". Decide the convention per level, then sweep.
 4. **Grammar pass**: full read for grammar, UK spelling, §-spacing, dash conventions, "this chapter" vs "this review" consistency.
 5. **Second opinion**: full manuscript through Gemini for an independent language check; its comments get the Josh/Wu treatment — asks, not tasks, per-point CKJ approval.
