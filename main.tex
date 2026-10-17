@@ -128,7 +128,7 @@ The recipe takes only a few inputs -- the problem we pose, the signal we aim to 
 These architectures follow from well-known and general symmetries such as translations, rotations, reflections, or permutations, but many other groups which we will not cover here --- like the the Lorentz group of special relativity -- are astrophysically relevant.
 
 \begin{svgraybox}
-\textcolor{red}{\textbf{Symmetry groups.} A group collects the transformations that leave a system recognisably itself. The collection is a group if any two transformations composed give a third which is also part of the group and every transformation has an inverse.\footnote{Another formal requirement is that ``do nothing'' belongs as the identity, but this is not very illuminating. \hyperref[app:symmetries]{Appendix~1} supplies more comprehensive formal definitions and the representation theory around them.} A capital letter names the kind of transformation, and the number in parentheses indicates the dimensions of the space it acts on or the number of members of the group:}
+\textcolor{red}{\textbf{Symmetry groups.} A group collects the transformations that leave a system recognisably itself. The collection is a group if any two transformations composed give a third which is also part of the group and every transformation has an inverse.\footnotemark{} A capital letter names the kind of transformation, and the number in parentheses indicates the dimensions of the space it acts on or the number of members of the group:}
 \begin{itemize}
   \item \textcolor{red}{\textbf{T} -- translations: $T(3)$ shifts three-dimensional space.}
   \item \textcolor{red}{\textbf{S} -- \emph{special}, a prefix: keep only the orientation-preserving half of a group, with its reflections dropped.}
@@ -144,11 +144,12 @@ These architectures follow from well-known and general symmetries such as transl
   \item \textcolor{red}{$SE(3)$ and $E(3)$ -- every rigid motion of a point cloud, without or with reflections: used often by the equivariant architectures of \S\ref{subsec:equivariant-mp}.}
 \end{itemize}
 \end{svgraybox}
+\footnotetext{Another formal requirement is that ``do nothing'' belongs as the identity, but this is not very illuminating. \hyperref[app:symmetries]{Appendix~1} supplies more comprehensive formal definitions and the representation theory around them.}
 
 \subsection{The geometries of the domain, the signal, and the model}
 \label{subsec:domain-signal}
 
-Any learning problem contains three geometries: that of the domain on which the data exist, that of the signal we wish to infer, and that of the model. These are shown in Figure~\ref{fig:domain_signal}. A good model respects the geometries of both the domain and the signal. The geometry of the \emph{domain} (which we denote $\Omega$) comes first: the support on which the data live, a regular grid, a sphere, an irregular point cloud, a graph. The geometry of the \emph{signal} comes second: the structure of the field defined on that support, which carries its own symmetries, a scalar temperature, a vector velocity, a tensor shear, on whatever space we happen to observe it. We will often find the geometry of the domain to be more restrictive than the signal. Take the task of inferring properties about galaxy mergers shown in Figure \ref{fig:domain_signal} --- the signal stays the same under any rotation, but the domain (a Euclidean grid) only admits rotations by multiples of 90 degrees. Choosing an architecture designed for perfect rotational symmetry of the domain is out of the question.
+Any learning problem contains three geometries: that of the domain on which the data exist, that of the signal we wish to infer, and that of the model. These are shown in Figure~\ref{fig:domain_signal}. A good model respects the geometries of both the domain and the signal. The geometry of the \emph{domain} comes first: the support on which the data live, a regular grid, a sphere, an irregular point cloud, a graph. The geometry of the \emph{signal} comes second: the structure of the field defined on that support, which carries its own symmetries, a scalar temperature, a vector velocity, a tensor shear, on whatever space we happen to observe it.
 
 The lesson repeats throughout this chapter: choose the algorithm that respects the native geometry of both the domain and the signal (see Table~\ref{tab:gdl_architectures}). Impose no symmetry the data lack, and discard none they hold. A convolutional network presumes a regular grid; run it on a sphere or an irregular detector and you must first voxelise, and thus invent a translational structure that does not exist, biasing the learning. Where the domain turns irregular, the graph is often not a stylistic preference but the only faithful description.
 
@@ -185,7 +186,7 @@ A function stays \emph{invariant} when the group action leaves its output unchan
 \subsection{The geometric blueprint, and the architectures it implies}
 \label{subsec:blueprint}
 
-Every successful modern deep learning architecture amounts to one recipe, applied to a different domain and a different symmetry. Fix a domain $\Omega$ with symmetry group $G$ and assemble four kinds of blocks, after the blueprint of \citet{Bronstein2021_geometricDL_book}. The box below uses a compact notation that the this blueprint leans on. The domain $\Omega$ is the set the data live on, with the pixel grid, the sphere, and the graph as our recurring examples. The group $G$ collects the symmetry transformations of \S\ref{subsec:symmetries}, and $g.x$ denotes the action of one such transformation $g$ on the signal $x$, as when a rotation turns an image or a permutation reorders a catalogue. A layer $B$ is equivariant when it commutes with every such action, $B(g.x)=g.B(x)$: transform first or process first, the result agrees.
+Every successful modern deep learning architecture amounts to one recipe, applied to a different domain and a different symmetry. Fix a domain $\Omega$ with symmetry group $G$ and assemble four kinds of blocks, after the blueprint of \citet{Bronstein2021_geometricDL_book}.
 
 \begin{svgraybox}
 \textbf{The Geometric Deep Learning blueprint.} From a domain $\Omega$ with symmetry group $G$, and a signal on it whose own symmetry decides the final output, build:
