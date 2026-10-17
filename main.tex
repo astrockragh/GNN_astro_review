@@ -331,10 +331,16 @@ The two learnable functions are typically represented by weight matrices $\mathb
 \]
 The carry-forward term plays $\phi(\mathbf{x}_i,\cdot)$; the pairwise pull $G m_j(\mathbf{x}_j-\mathbf{x}_i)/r^3$ plays the edge message $\psi$; the sum over bodies plays the permutation-invariant aggregator. A GNN layer, then, amounts to a learnable, generalised force law plus a one-step integrator, which explains why message passing feels native to the physicist, and why the learned edge function so often can be read back as a physical force through interpretability techniques \citep{Cranmer2019_symbolicphysics_GNN, Lemos2023_orbitalmechanics_symbolic}.
 
+In the words of \S\ref{subsec:blueprint}, Equation~\ref{eq:first_mp} is the equivariant block $B$, acting on the whole node set at once:
+\[
+\mathbf{h} \;=\; B(\mathbf{x}), \qquad B(\mathbf{x})_i \;=\; \phi\!\Big(\mathbf{x}_i,\ \bigoplus_{j\in\mathcal{N}(i)}\psi(\mathbf{x}_i,\mathbf{x}_j,\mathbf{e}_{ij})\Big).
+\]
+Relabel the nodes and the outputs relabel with them, since the aggregator ignores neighbour order, so $B(g.\mathbf{x})=g.B(\mathbf{x})$ for every permutation $g$. Stack these blocks with nonlinearities between them, add an optional coarsening $P$ and the optional invariant readout pooling $A$ if the task is graph-level (\S\ref{subsec:pooling}), and the composition $f = A \circ \sigma_J \circ B_J \circ \cdots \circ \sigma_1 \circ B_1$ of the blueprint is now assembled on the graph.
+
 \subsection{Common propagation layers}
 \label{subsec:flavours}
 
-The message passing layer defined above can be constrained and sorted into three canonical groups \citep{Bronstein2021_geometricDL_book, Velickovic2022_messagepassing_up}, in order of rising expressivity and rising cost. With aggregator $\bigoplus$ and learnable maps $\psi,\phi$:
+The message passing layer defined in Equation \ref{eq:first_mp} can be constrained and sorted into three canonical groups \citep{Bronstein2021_geometricDL_book, Velickovic2022_messagepassing_up}. In order of descending expressivity and computational cost:
 \begin{align}
 \text{Message passing:}\quad
   \mathbf{h}_i &= \phi\!\Big(\mathbf{x}_i, \textstyle\bigoplus_{j\in\mathcal{N}_i}
