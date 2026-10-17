@@ -8,7 +8,7 @@
 %%   \arxivtrue   -> standalone arXiv: no chapter line, sections 1, 2, 3,
 %%                   full title, author-year citations, references before the appendices.
 \newif\ifarxiv
-\arxivfalse
+\arxivtrue
 %% ======================================================
 \ifarxiv\usepackage{natbib}\else\usepackage[numbers,sort&compress]{natbib}\fi
 \newcommand{\pcite}[1]{\ifarxiv\citealp{#1}\else\citep{#1}\fi}% citation inside parentheses, correct in both modes
