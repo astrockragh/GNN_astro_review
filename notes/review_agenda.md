@@ -1,41 +1,31 @@
 # Review agenda — open items only
 
-15 Oct 2026, late. Pruned: everything resolved now lives in git history, not here. GROUND RULE unchanged: items from the Josh/Claude doc and Wu's mail are asks, not tasks — nothing goes in without CKJ's approval of that specific point. Flags: 🟡 partly addressed · ⬜ open · 💬 needs a decision or a rework done together.
+17 Oct 2026. Every review round is now closed: Josh's comments doc, the face-to-face priorities, and Wu's round. What remains is the endgame. GROUND RULE unchanged for any late-arriving comments (Gemini's included): asks, not tasks — nothing goes in without CKJ's approval of that specific point.
 
-## Priority — from the face-to-face with Josh (added 15 Oct)
+## Rounds — all clear
 
-- **J1 — Gentler on-ramp to the mathematics** ✅ Done 17 Oct: symbols unpacked in plain words at the blueprint box (CKJ's wording), the invariance/equivariance equations now written out in §2.2 so the reader meets $g.x$ twice, the GNN derivation cashes its demands in blueprint symbols ($G=\Sigma_n$, $B$, $\phi$, $\psi$, $\bigoplus$) and pre-announces §4's notation, and a one-line throwback opens §4. Notation unified: the running GNN equations now use $i$ (receiver) / $j$ (sender) throughout, matching the flavours figure, the force law, and MACE's footnote; the adjacency keeps rows-send/columns-receive with a red footnote at Eq. 1 disarming the index-order difference; $u/v$ survives nowhere except the vertex-naming footnote in §3.1 (harmless, flagged).
-- **J2 — Best Practices restructure** 💬 CKJ's reorg into General vs Practical, with his in-file note at the Practical subsection asking for input on how to structure the two. Claude's read and recommendation sent 15 Oct (short version: the true split as the content stands is design-time decisions vs working practices, so relabel the pillars to match and shorten their colon-list titles; optionally move "When not to use a GNN" to the front of the first pillar as the gate). Pillar intros remain tabled until the structure settles.
+- **Josh, comments doc**: None — all 26 resolved, dismissed, or absorbed (16 Oct). Residue lives in the endgame bib bullet: preprint-vs-publication year convention.
+- **Josh, face-to-face**: J1 (gentler maths on-ramp, Eq. 1 recast as blueprint block $B$, $ij$-notation unified with the $u/v$ footnote at the adjacency) ✅ and J2 (pillars "Designing the Model" / "Working with the Model" with co-written intros) ✅, both verified in the compiled file 17 Oct.
+- **Wu**: W1–W5 all resolved (17 Oct, CKJ). If the domain_signal_model.py figure ever wants a rerun, the version-matched matplotlib environments stand ready.
+- **CKJ's in-file notes**: None — no `%claude` or placeholder comments remain.
 
-## A. Comments-doc items still open (numbering follows the doc)
+## In flight
 
-None — all 26 are resolved, dismissed, or absorbed (16 Oct). Items 5, 23, 24 closed last: numbers verified against the final survey of 60; Jespersen 2021 thesis entry, Yang & Yu formulation (CKJ), and the Rossi entry completed; every bibtex warning fixed (Ting2026 double pages, Chiang month macro, Pascal editor clash, Thiele2026 editors/publisher added, Iqbal completed to A\&A 704, A334). Residue moved to the endgame bib bullet: preprint-vs-publication year convention.
+- **Unsupervised-learning aside for the Frontier** (CKJ, 17 Oct): reworked draft delivered — standalone paragraph after the Frontier list, softer tone, successes first (GRB light-curve clustering, the weirdest SDSS galaxies, contrastive pretraining on images), graph side framed as nearly empty with the VGAE machinery cite. Rewritten 17 Oct per CKJ: shorter, Gemini-voiced, Cranmer dropped entirely (17 Oct), spender and the optical-IR paper added to the pretraining cite block. Awaiting CKJ's paste or veto; all six supporting bib entries (Jespersen2020_GRB_lightcurve_clustering, Baron2017_anomaly_SDSSspectra, Hayat2021_selfsupervised_astroimages, Melchior2023_spender_autoencoder, Parker2024_AstroCLIP_crossmodal, Jespersen2026_optical_infrared) sit in ref.bib, and the paragraph rescues Kipf2016_VGAE_autoencoder from the unused pile. Note for CKJ: spender keyed 2023 (AJ 166, 74) per the year convention, not 2021; Jespersen2026_optical_infrared still wants volume/eid.
+- **Commit pending on CKJ's side**: main.tex + ref.bib + notes/appendix_symmetries.tex carry the year/venue sweep (block provided 17 Oct).
 
+## Small catches from the 17 Oct verification pass
 
-## B. CKJ's % comments and placeholders in main.tex
+- "complimentary" → "complementary", twice: the §3.1 graph-definition paragraph (L249) and the Fig. 2 anatomy caption (L256).
+- Same L249 sentence: "a compact description of A" — the A wants math mode, $A$.
+- The §3.1 vertex-naming footnote and the new $u/v$ footnote sit two sentences apart in the same paragraph; they read compatibly (one keeps $v$ for the node, the other reports the literature's $u/v$ indices), but worth one glance in context.
 
-- (All stale comments are stripped as of 15 Oct; the Villar line is deleted per CKJ.)
-- **L618** CKJ's in-file note asking for input on the two-pillar structure (= J2).
-- **L569** "% Some text here" — the "General Considerations" pillar needs its intro paragraph; its sibling "Practical Considerations" intro deserves the same look (CKJ's reorg weigh-in: the general pillar should promise *judgement*, the practical pillar *habits*; "with a eye on pitfalls" typo). Drafting TABLED 15 Oct: first candidates rejected — the intros must sound human, in plain prose, with no constructed one-liners.
+## Endgame — one full-manuscript pass, in order
 
-## C. Wu round, open
-
-W1. **Fig. 1, grid vs rotation (D8 point)** 💬 Keep SO(2) on the signal, give the domain its honest quarter-turns, and say in caption + prose that the mismatch between the two is where augmentation and equivariant layers (§4.6) live. Panel amendment joins the figure-rerun batch (domain_signal_model.py; signal-column header typo "What liven on it"; unify the figure's $D_4$ with the groups box's $D(4)$).
-
-W5. **Domain vs signal needs clarifying (Wu was confused)** ⬜ Cheapest first: (i) one disambiguating sentence in §2.1 right after the two geometries are introduced, using Wu's own case; (ii) one caption sentence on Fig. 1 naming the same mismatch; (iii) a small svgraybox "The domain and the signal" if the distinction deserves furniture; (iv) the panel-label touch-up with the rerun batch. Recommended: (i)+(ii) now, (iv) with the batch.
-
-## D. Next up (CKJ picks)
-
-1. **Figure rerun remaining (optional)**: domain_signal_model.py — the "What liven on it" typo turned out already fixed (the script reads "What lives on it"); what remains of W1 is only the label question: honest quarter-turns on the grid panel and $D_4$ vs the box's $D(4)$.
-3. **Claims sweep**: 23 (+ the end-of-rounds number refresh, item 5).
-4. **Pillar intros (tabled)**: General ("% Some text here") and Practical — resume when CKJ wants, in a human voice.
-
-## E. Final clean-up (endgame, after the rounds)
-
-One full-manuscript pass, in order:
-- **Strip dead weight**: every commented-out bit (old sentences, stale `%claude` / `%` notes, the commented Villar line once item 15 is decided), and the red `\textcolor` wrappers once each insertion is accepted.
-- **Title case in titles**: sections run title case, subsections sentence case — three outliers today: "Cosmology and Large-Scale Structure", and the two §6 pillars "General Considerations: Architectures, Inductive Biases, and When not to use a GNN" (which also breaks its own case on "When not to use") and "Practical Considerations: Tutorials, Pitfalls, and Engaging with the Literature". Decide the convention per level, then sweep.
-- **Grammar pass**: full read for grammar, UK spelling, §-spacing, dash conventions, "this chapter" vs "this review" consistency.
-- **Bib endgame**: prune or cite the unused entries (34 as of 15 Oct, including reserves: Jespersen2026_environment_assembly, Roper2020_MEGA, PySR, Ting2025 textbook, Lino2021, vanDenEnde2020); fix the bibtex warnings (see item 24).
-- **Second opinion**: run the full manuscript through Gemini for an independent language check; its comments get Josh/Wu treatment — asks, not tasks, each needs CKJ's per-point approval.
-- **Final compile check** in both modes (`\arxivfalse` and `\arxivtrue`): 0 errors, 0 undefined references, spot-checked page renders, running heads.
+0. **Pull first**: bring any Overleaf edits (W5 sentences etc.) down to disk and level the remotes before the pass starts, so the sweep runs on the real file.
+1. **Strip dead weight**: every commented-out bit, and the red `\textcolor` wrappers (15 as of 17 Oct) once each insertion is accepted.
+2. **Title case in titles**: sections run title case, subsections sentence case — lone outlier "Cosmology and Large-Scale Structure" (the two long pillar titles vanished with J2). Decide the convention per level, then sweep.
+3. **Grammar pass**: full read for grammar, UK spelling, §-spacing, dash conventions, "this chapter" vs "this review" consistency; fold in the small catches above if they haven't been taken earlier.
+4. **Bib endgame**: year convention DONE 17 Oct (publication year whenever in doubt: 26 entries rewritten, 8 keys renamed to their publication year, venues filled, Wu2024 and arnaiz completed). Remaining: prune or cite the unused entries (recount after the unsupervised paragraph lands; reserves include Jespersen2026_environment_assembly, Roper2020_MEGA, PySR, Ting2025 textbook, Lino2021, vanDenEnde2020).
+5. **Second opinion**: run the full manuscript through Gemini for an independent language check; its comments get the Josh/Wu treatment — asks, not tasks, each needs CKJ's per-point approval.
+6. **Final compile check** in both modes (`\arxivfalse` and `\arxivtrue`): 0 errors, 0 undefined references, spot-checked page renders, running heads.
