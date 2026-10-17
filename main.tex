@@ -185,7 +185,7 @@ A function stays \emph{invariant} when the group action leaves its output unchan
 \subsection{The geometric blueprint, and the architectures it implies}
 \label{subsec:blueprint}
 
-Every successful modern deep learning architecture amounts to one recipe, applied to a different domain and a different symmetry. Fix a domain $\Omega$ with symmetry group $G$ and assemble four kinds of blocks, after the blueprint of \citet{Bronstein2021_geometricDL_book}.
+Every successful modern deep learning architecture amounts to one recipe, applied to a different domain and a different symmetry. Fix a domain $\Omega$ with symmetry group $G$ and assemble four kinds of blocks, after the blueprint of \citet{Bronstein2021_geometricDL_book}. The box below uses a compact notation that the this blueprint leans on. The domain $\Omega$ is the set the data live on, with the pixel grid, the sphere, and the graph as our recurring examples. The group $G$ collects the symmetry transformations of \S\ref{subsec:symmetries}, and $g.x$ denotes the action of one such transformation $g$ on the signal $x$, as when a rotation turns an image or a permutation reorders a catalogue. A layer $B$ is equivariant when it commutes with every such action, $B(g.x)=g.B(x)$: transform first or process first, the result agrees.
 
 \begin{svgraybox}
 \textbf{The Geometric Deep Learning blueprint.} From a domain $\Omega$ with symmetry group $G$, and a signal on it whose own symmetry decides the final output, build:
