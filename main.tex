@@ -125,8 +125,10 @@ This chapter proceeds in three movements: the geometry of learning and the geome
 When we master a few foundational principles, we can always \emph{derive}, rather than memorise, the right architecture\footnote{The right architecture will often turn out to be a GNN.} for the problem before us.
 The recipe takes only a few inputs -- the problem we pose, the signal we aim to measure, the domains on which the data and signal live, and the symmetries to respect -- and then returns the architecture to use. In the following sections, we show how to define the geometry of the data domain, and that of the signal, introduce the necessary language of symmetry, and assemble the blueprint from which any modern deep-learning architecture, be it the CNN, the Transformer, or the GNN, descends.
 
+These architectures follow from well-known and general symmetries such as translations, rotations, reflections, or permutations, but many other groups which we will not cover here --- like the the Lorentz group of special relativity -- are astrophysically relevant.
+
 \begin{svgraybox}
-\textcolor{red}{\textbf{Symmetry groups and how to read their names.} A group collects the transformations that leave a system recognisably itself. Three facts make the collection a group: two transformations composed give a third, every transformation can be undone, and ``do nothing'' belongs as the identity (\hyperref[app:symmetries]{Appendix~1} supplies the formal definition and the representation theory). A capital letter names the kind of transformation, and the number in parentheses counts the dimensions of the space it acts on:}
+\textcolor{red}{\textbf{Symmetry groups.} A group collects the transformations that leave a system recognisably itself. The collection is a group if any two transformations composed give a third which is also part of the group and every transformation has an inverse.\footnote{Another formal requirement is that ``do nothing'' belongs as the identity, but this is not very illuminating. \hyperref[app:symmetries]{Appendix~1} supplies more comprehensive formal definitions and the representation theory around them.} A capital letter names the kind of transformation, and the number in parentheses indicates the dimensions of the space it acts on or the number of members of the group:}
 \begin{itemize}
   \item \textcolor{red}{\textbf{T} -- translations: $T(3)$ shifts three-dimensional space.}
   \item \textcolor{red}{\textbf{S} -- \emph{special}, a prefix: keep only the orientation-preserving half of a group, with its reflections dropped.}
@@ -135,17 +137,12 @@ The recipe takes only a few inputs -- the problem we pose, the signal we aim to 
   \item \textcolor{red}{\textbf{E} -- Euclidean: translations, rotations, and reflections together.}
   \item \textcolor{red}{\textbf{D} -- dihedral: the discrete rotations and flips of a regular polygon, where the number instead counts the sides.}
 \end{itemize}
-\textcolor{red}{The groups that carry most of astrophysics:}
+\textcolor{red}{A few astrophysically representative groups serve as examples:}
 \begin{itemize}
-  \item \textcolor{red}{$T(3)$ -- statistical homogeneity; the convolutional network inherits its discrete version on the pixel grid.}
-  \item \textcolor{red}{$SO(2)\cong U(1)$ -- rotation about a single axis: the position angle of a galaxy on the sky, the phase of a periodic light curve.}
+% these examples should be expanded on
   \item \textcolor{red}{$SO(3)$ -- rotations of three-dimensional space: isotropy, and full-sky maps on the celestial sphere.}
-  \item \textcolor{red}{$O(3)$ -- rotations joined by reflections: parity, which gravity conserves and galaxy-spin handedness probes.}
-  \item \textcolor{red}{$SE(3)$ and $E(3)$ -- every rigid motion of a point cloud, without or with reflections: the groups of the equivariant architectures of \S\ref{subsec:equivariant-mp}.}
-  \item \textcolor{red}{$D(4)$ -- what pixelisation leaves of $SO(2)$: the quarter-turns and flips of the square grid, and the standard augmentation group of galaxy-morphology work.}
-  \item \textcolor{red}{$\Sigma_n$ -- the $n!$ relabellings of $n$ objects, its count worn as a subscript: the native group of the catalogue, the graph, and this chapter.}
+  \item \textcolor{red}{$SE(3)$ and $E(3)$ -- every rigid motion of a point cloud, without or with reflections: used often by the equivariant architectures of \S\ref{subsec:equivariant-mp}.}
 \end{itemize}
-\textcolor{red}{Other groups walk the astrophysical stage as well -- the Lorentz group of special relativity, the Galilean boosts between inertial frames, the dilations of self-similar collapse -- and when a problem keeps one of these symmetries, the blueprint of \S\ref{subsec:blueprint} casts that group in the leading role.}
 \end{svgraybox}
 
 \subsection{The geometries of the domain, the signal, and the model}
