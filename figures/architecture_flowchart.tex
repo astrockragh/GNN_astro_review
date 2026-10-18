@@ -18,7 +18,7 @@
 \node[question, below=of impose] (msg) {Message must depend on edge or receiver features?};
 \node[final, below left=8mm and 2mm of msg] (sage) {\texttt{SAGEConv}\\ \scriptsize cheap, stable, convolutional};
 \node[final, below right=8mm and 2mm of msg] (mp) {Full message passing\\ \scriptsize expressive, costlier};
-\node[advice, below=16mm of msg] (start) {Whatever the path: start with the \textbf{sum} aggregator and two to three layers depth. Try the Deep Set and summary-statistic baselines before reaching for the GNN.};
+\node[advice, below=16mm of msg] (start) {Whatever the path: start with the \textbf{sum} aggregator and a depth of two to three layers. Try the Deep Set and summary-statistic baselines before reaching for the GNN.};
 
 \draw[arrow] (grid) -- node[lab] {yes} (cnn);
 \draw[arrow] (grid) -- node[lab] {no} (edges);
