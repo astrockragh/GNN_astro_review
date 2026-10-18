@@ -8,8 +8,8 @@
 %%   \arxivtrue   -> standalone arXiv: no chapter line, sections 1, 2, 3,
 %%                   full title, author-year citations, references before the appendices.
 \newif\ifarxiv
-\arxivfalse
-% \arxivtrue
+% \arxivfalse
+\arxivtrue
 %% ======================================================
 \ifarxiv\usepackage{natbib}\else\usepackage[numbers,sort&compress]{natbib}\fi
 \newcommand{\pcite}[1]{\ifarxiv\citealp{#1}\else\citep{#1}\fi}% citation inside parentheses, correct in both modes
@@ -17,13 +17,13 @@
 \ifarxiv
 \makeatletter
 \renewcommand\section{\@startsection{section}{1}{\z@}%
-                       {-22\p@}%
+                       {-26\p@}%
                        {12\p@}%
                        {\normalfont\secsize\secstyle
                         \rightskip=\z@ \@plus 8em\pretolerance=10000 }}
 \renewcommand\subsection{\@startsection{subsection}{2}{\z@}%
-                       {-18\p@}%
-                       {10\p@}%
+                       {-20\p@}%
+                       {11\p@}%
                        {\normalfont\subsecsize\subsecstyle
                         \rightskip=\z@ \@plus 8em\pretolerance=10000 }}
 \renewcommand\subsubsection{\@startsection{subsubsection}{3}{\z@}%
@@ -73,7 +73,9 @@
 % svgraybox ships with 0pt left / 24pt right inner margins, which presses the text against the left border of the grey panel.
 \usepackage{longtable}% for the auto-generated survey table (Appendix 3)
 % Equal 6pt margins centre the text block; delete this block to restore the class default (0pt/24pt).
-\renewenvironment{svgraybox}{\fboxsep=12pt\relax\begin{shaded}\list{}{\leftmargin=6pt\rightmargin=6pt\topsep=0pt\relax}\expandafter\item\parindent=\svparindent\hskip-\listparindent}{\endlist\end{shaded}}
+% \renewenvironment{svgraybox}{\fboxsep=12pt\relax\begin{shaded}\list{}{\leftmargin=6pt\rightmargin=6pt\topsep=0pt\relax}\expandafter\item\parindent=\svparindent\hskip-\listparindent}{\endlist\end{shaded}}
+
+\renewenvironment{svgraybox}{\par\addvspace{10pt}\noindent\begin{minipage}{\linewidth}\fboxsep=12pt\relax\begin{shaded}\list{}{\leftmargin=6pt\rightmargin=6pt\topsep=0pt\relax}\expandafter\item\parindent=\svparindent\hskip-\listparindent}{\endlist\end{shaded}\end{minipage}\par\addvspace{10pt}}
 
 \begin{document}
 
@@ -146,13 +148,13 @@ This \chapterorreview{} proceeds in three movements: the geometry of learning an
 When we master a few foundational principles, we can always \emph{derive}, rather than memorise, the right architecture\footnote{The right architecture will often turn out to be a GNN.} for the problem before us. The recipe takes only a few inputs --- the problem we pose, the signal we aim to measure, the domains on which the data and signal live, and the symmetries to respect --- and then returns the architecture to use. In the following sections, we show how to define the geometry of the data domain, and that of the signal, introduce the necessary language of symmetry, and assemble the blueprint from which any modern deep-learning architecture, be it the CNN, the transformer, or the GNN, can be derived.
 
 These common architectures follow from well-known and general symmetries such as translations, rotations, reflections, or permutations, but many other symmetry groups which we will not cover here --- like the Lorentz group of special relativity --- are astrophysically relevant.
-
+\ifarxiv\enlargethispage{1.5\baselineskip}\else\enlargethispage{2\baselineskip}\fi
 % \noindent\begin{minipage}{\linewidth}
 \begin{svgraybox}
 \textbf{Symmetry group.} A group $G$ is the set of transformations that leave a system recognisably itself. The set is a group if any two transformations composed give a third which is also part of the group, and every transformation has an inverse.\footnotemark{} A capital letter names the kind of transformations, and the number in parentheses typically indicates the dimensions of the space it acts on.
 \end{svgraybox}
-% \end{minipage}
 \footnotetext{Another formal requirement is that ``do nothing'' belongs as the identity. While this is necessary to form a group, it is not very illuminating. \hyperref[app:symmetries]{Appendix~1} supplies more comprehensive formal definitions and the representation theory around them.}
+% \end{minipage}
 
 We will often encounter the following classes of groups:
 
@@ -163,7 +165,7 @@ We will often encounter the following classes of groups:
   \item \textbf{E} -- Euclidean: translations, rotations, and reflections all together.
   \item \textbf{D} -- dihedral: the discrete rotations and flips of a regular
   polygon. The number typically counts the sides of the polygon.
-  \item $\Sigma_n$ -- permutations of $n$ objects: the set without a given order
+  \item $\Sigma_n$ -- permutations of $n$ objects: the set without a given order.
   \item \textbf{S} -- \emph{special}, a prefix: keep only the orientation-preserving half of a group, with its reflections dropped.
 \end{itemize}
 A few astrophysically representative groups serve as specific examples:
@@ -225,7 +227,7 @@ Every successful modern deep learning architecture amounts to one recipe, applie
 \begin{svgraybox}
 \textbf{The Geometric Deep Learning blueprint.} From a domain $\Omega$ with symmetry group $G$ from which the group actions $g$ can act on inputs $x$ as $g.x$, and a signal on it whose own symmetry decides the final output, build:
 \begin{itemize}  
-  \item a \textbf{$G$-equivariant layer} $B$, which mixes features in step with the symmetry, $B(g.x)=g.B(x)$;
+  \item a \textbf{$G$-equivariant layer} $B$, $B(g.x)=g.B(x)$;
   \item a pointwise \textbf{non-linearity} $\sigma$;
   \item an optional \textbf{local pooling (coarsening)} $P$, which shrinks the domain while it preserves the symmetry;
   \item a \textbf{global pooling} $A$, which reads out a $G$-\emph{invariant} answer, $A(g.x)=A(x)$.
@@ -297,7 +299,7 @@ As a case study, take the treatment of the merger trees in \citet{Jespersen2022_
 
 \begin{figure}[t]
 \centering
-\includegraphics[trim={0cm 4.5cm 0 3.5cm},clip, width=0.8\textwidth]{figures/full_tree2}
+\includegraphics[trim={0cm 4.5cm 0 3.5cm},clip, width=0.7\textwidth]{figures/full_tree2}
 \caption{A dark-matter halo merger tree: the assembly history forms a graph by construction, with nodes coloured by halo mass and edges that follow the flow of time. The directed edges make causality structural: information may flow from progenitor to descendant, but never back against the arrow of time. The merger tree is furthermore condensed so that only merger nodes are preserved, providing a strong inductive bias towards the importance of mergers. Adapted from \citet{Jespersen2022_mangrove}.}
 \label{fig:merger_tree}
 \end{figure}
@@ -424,14 +426,13 @@ A GNN affords every task one might want, across all three levels and both modes:
 \end{figure}
 
 One more distinction matters before the tasks meet data: whether the network must generalise across many graphs, or only fill in the gaps of one. The literature calls the two modes inductive and transductive learning \citep{Hamilton2017_representation_review}.
+\ifarxiv\enlargethispage{\baselineskip}\else\enlargethispage{2\baselineskip}\fi
 
 % \noindent\begin{minipage}{\linewidth}
-\begin{keeptogether}
 \begin{svgraybox}
 \textbf{Inductive vs.\ transductive learning.} Inductive learning\footnotemark{} trains on many graphs and deploys on new, unseen ones. Transductive learning trains and predicts within one fixed graph in order to spread labels from the nodes that have them to the nodes that lack them.
 \end{svgraybox}
 % \end{minipage}
-\end{keeptogether}
 \footnotetext{The term carries an unfortunate near-collision: an inductive \emph{bias} (\S\ref{sec:intro}) is an assumption built into the model, while inductive \emph{learning} is a way of deploying one.}
 
 % One more distinction matters before the tasks meet data: whether the network must generalise across many graphs, or only fill in the gaps of one. The literature calls the two modes inductive and transductive learning \citep{Hamilton2017_representation_review}.
@@ -742,7 +743,7 @@ The frontier runs wide and largely open. GNNs have already been demonstrated as 
 
 CKJ thanks the editors of the \textit{Machine Learning Techniques for Astrophysics and Cosmology} series, Cosimo Bambi, Vinay Kashyap, Swarnim Shashank, and Naoki Yoshida, for the invitation to write this \chapterorreview{}. CKJ wishes to thank Marielle Côté-Gendreau for ever-present help with formulating the text and arguments presented here. CKJ also deeply thanks John F. Wu and Joshua S. Speagle for valuable feedback on this \chapterorreview{}. CKJ furthermore thanks the organisers and participants of the Kavli Institute for Theoretical Physics ``Building a Physical Understanding of Galaxy Evolution with Data-driven Astronomy'' program, as well as the organisers and participants of the Centre de recherche en astrophysique du Québec (CRAQ) Summer School on Scientific Machine Learning Applied to Astrophysical Data, both of which enabled him to develop the ability to efficiently communicate the guiding principles behind Graph Neural Networks and Geometric Deep Learning. CKJ is also grateful for many useful and illuminating conversations on GNNs with Peter Melchior, Miles Cranmer, David Spergel, Shirley Ho, Paco Villaescusa-Navarro, T. Lucas Makinen, Chen-Yu Chuang, Adi Varshney, Vasily Belokurov, Tri Nguyen, Kwok Sun Tang, Natalí de Santi, Jordan Krywonos, Matthew Johnson, Yashar Hezaveh, Laurence Perreault Levasseur, and many others.
 
-Copy-editing and writing code for constructing figures for this work were aided by Claude-Opus-5. The literature search, original writing, structure, ideas, and validation of this work are entirely due to the author.
+Copy-editing and writing code for constructing figures for this work were aided by Claude-Opus-5 and Fable-5. The literature search, original writing, structure, ideas, and validation of this work are entirely due to the author.
 \end{acknowledgement}
 
 \ifarxiv\printreferences\fi
