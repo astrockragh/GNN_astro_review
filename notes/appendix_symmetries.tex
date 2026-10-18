@@ -26,7 +26,7 @@ Commutativity is \emph{not} required: in general $gh \neq hg$ (rotating then tra
 
 \runinhead{Invariance vs.\ equivariance.} Imposing a symmetry on a learned function $f$ is a powerful inductive bias: it shrinks the space of candidate functions to those that already respect the symmetry, so less has to be learned from data. Two cases recur throughout the \chapterorreview{}:
 
-\begin{definition}[Invariance and equivariance]\sloppy
+\begin{definition}[Invariance and equivariance]
 A function $f$ is \emph{$G$-invariant} if $f(\rho(g)x) = f(x)$ for all $g\in G$ --- the output ignores the transformation. It is \emph{$G$-equivariant} if $f(\rho(g)x) = \rho(g)\,f(x)$ --- the output transforms in lockstep with the input.
 \end{definition}
 
