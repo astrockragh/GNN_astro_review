@@ -8,8 +8,8 @@
 %%   \arxivtrue   -> standalone arXiv: no chapter line, sections 1, 2, 3,
 %%                   full title, author-year citations, references before the appendices.
 \newif\ifarxiv
-% \arxivfalse
-\arxivtrue
+\arxivfalse
+% \arxivtrue
 %% ======================================================
 \ifarxiv\usepackage{natbib}\else\usepackage[numbers,sort&compress]{natbib}\fi
 \newcommand{\pcite}[1]{\ifarxiv\citealp{#1}\else\citep{#1}\fi}% citation inside parentheses, correct in both modes
@@ -66,7 +66,8 @@
 \usepackage{hyperref}        %for hyperlinks
 \hypersetup{colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue}
 \usepackage{marvosym}          % provides \Letter; in every TeX Live (ifsym is not)
-
+\usepackage{orcidlink}         % ORCID iD icon linking to orcid.org (needs hyperref and tikz, both loaded above)
+\providecommand{\fnm}[1]{#1}\providecommand{\sur}[1]{#1}% given name(s) and surname, marked up as in Springer Nature's templates
 \makeindex             % used for the subject index
 
 
@@ -90,9 +91,10 @@
 \title{Graph Neural Networks}
 \fi
 \titlerunning{Graph Neural Networks for Astrophysics and Cosmology}
-\author{Christian Kragh Jespersen}
+\author{\fnm{Christian Kragh} \sur{Jespersen}\,\orcidlink{0000-0002-8896-6496}}
+\tocauthor{Christian Kragh Jespersen}% plain name for the volume's table of contents
 \authorrunning{C. K. Jespersen}
-\institute{Christian Kragh Jespersen (\Letter,  \email{christian.jespersen@utoronto.ca}) \at David A. Dunlap Department of Astronomy \& Astrophysics, University of Toronto, Toronto, ON M5S 3H4, Canada \\ Department of Statistical Sciences, University of Toronto, Toronto, ON M5S 3G3, Canada \\ Canadian Institute for Theoretical Astrophysics, University of Toronto, 60 St George Street, Toronto, M5S 3H8, Ontario, Canada \\  Department of Astrophysical Sciences, Princeton University, Princeton, NJ 08544, USA}
+\institute{\fnm{Christian Kragh} \sur{Jespersen} (\Letter,  \email{christian.jespersen@utoronto.ca}) \at David A. Dunlap Department of Astronomy \& Astrophysics, University of Toronto, Toronto, ON M5S 3H4, Canada \\ Department of Statistical Sciences, University of Toronto, Toronto, ON M5S 3G3, Canada \\ Canadian Institute for Theoretical Astrophysics, University of Toronto, 60 St George Street, Toronto, M5S 3H8, Ontario, Canada \\  Department of Astrophysical Sciences, Princeton University, Princeton, NJ 08544, USA}
 \ifarxiv
 \makeatletter\@numarttrue\makeatother% suppress the "Chapter N" line (svmult resets this at \begin{document}, so it must sit here)
 \setcounter{chapter}{1}% keeps the counter sane; the redefinitions below hide it
@@ -413,10 +415,10 @@ Because the inner workings of GNNs inherently resemble both communication in a s
 These can optionally take in a third kind of input besides the node and edge features: a global feature vector, $U$, with relevance for all nodes and edges. For a halo-related task, this could be the set of cosmological parameters governing the entire Universe, with shared importance for all halos. How a message passing layer composes all these kinds of inputs is shown in Figure~\ref{fig:full_interaction_network} and discussed more deeply in \S\ref{subsec:compose}.
 
 Like other deep-learning architectures, GNNs train end-to-end by gradient descent on any differentiable loss function. These may be attached to the node-, edge-, or graph-level output with the loss function as e.g. cross-entropy when the label is a class, or mean squared error when it is a number. The loss also decides what the answer means. Swap the mean squared error for a Gaussian likelihood with a predicted variance, and the same network returns an error bar with every estimate. To gain a full posterior, the GNN can serve as the trainable summariser inside a normalising flow or a simulation-based inference pipeline, as in the void-finding flow of \citet{Thiele2026_void_graphflow}. We flag this role here and leave the machinery to the dedicated review of \citet{Thiele2026_SBI_review}.
-% \vskip-0.2cm
+ 
 \subsection{Prediction types}
 \label{subsec:tasks}
-% \vskip-0.1cm
+
 A GNN affords every task one might want, across all three levels and both modes: the node, the edge, and the graph, in classification or regression mode (Figure~\ref{fig:tasks}). This adaptability makes GNNs a reasonable choice for the vast majority of astrophysical tasks, if not the ideal choice. On the cosmic web alone one may ask, at the graph level, whether the volume comes from a universe beyond $\Lambda$CDM, or what value $\Omega_m$ takes; at the node level, whether the galaxy in the halo is quiescent, or what its stellar mass is; at the edge level, whether two halos will merge, and in how long (see Figure~\ref{fig:cosmic_web}). The node- and edge-level outputs demand permutation \emph{equivariance} since the outputs must follow any permutations in the node ordering; the graph-level output demands permutation \emph{invariance}, since no relabelling of nodes should matter. The former is achieved with permutation-invariant aggregations when performing message passing, and the latter through a global permutation-invariant aggregation function over all nodes (see \S\ref{subsec:pooling}).
 
 \begin{figure}[t]
@@ -426,21 +428,12 @@ A GNN affords every task one might want, across all three levels and both modes:
 \end{figure}
 
 One more distinction matters before the tasks meet data: whether the network must generalise across many graphs, or only fill in the gaps of one. The literature calls the two modes inductive and transductive learning \citep{Hamilton2017_representation_review}.
-\ifarxiv\enlargethispage{\baselineskip}\else\enlargethispage{2\baselineskip}\fi
+\ifarxiv\enlargethispage{\baselineskip}\else\enlargethispage{5\baselineskip}\fi
 
-% \noindent\begin{minipage}{\linewidth}
 \begin{svgraybox}
 \textbf{Inductive vs.\ transductive learning.} Inductive learning\footnotemark{} trains on many graphs and deploys on new, unseen ones. Transductive learning trains and predicts within one fixed graph in order to spread labels from the nodes that have them to the nodes that lack them.
 \end{svgraybox}
-% \end{minipage}
 \footnotetext{The term carries an unfortunate near-collision: an inductive \emph{bias} (\S\ref{sec:intro}) is an assumption built into the model, while inductive \emph{learning} is a way of deploying one.}
-
-% One more distinction matters before the tasks meet data: whether the network must generalise across many graphs, or only fill in the gaps of one. The literature calls the two modes inductive and transductive learning \citep{Hamilton2017_representation_review}.
-
-% \begin{svgraybox}
-% \textbf{Inductive vs.\ transductive learning.} Inductive learning\footnotemark{} trains on many graphs and deploys on new, unseen ones. Transductive learning trains and predicts within one fixed graph in order to spread labels from the nodes that have them to the nodes that lack them.
-% \end{svgraybox}
-% \footnotetext{The term carries an unfortunate near-collision: an inductive \emph{bias} (\S\ref{sec:intro}) is an assumption built into the model, while inductive \emph{learning} is a way of deploying one.}
 
 The same distinction can be used to sort the astrophysical literature. The sorting is lopsided: nearly every application in \S\ref{sec:applications} is inductive, trained on many simulated merger trees, cosmic-web boxes, or detector events and deployed on new ones. The transductive setting still matters, as it looks like a familiar situation: one observed catalogue, partially labelled, as when a fraction of Milky Way stars carries spectroscopic follow-up and the rest awaits with only photometry. In the transductive setting the training and test nodes share edges by construction, so information leaks between the splits by default, a possible pitfall we return to in \S\ref{subsec:bp-diagnostics}.
 
