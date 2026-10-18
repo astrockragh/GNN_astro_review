@@ -8,7 +8,7 @@
 \newcommand{\greencheck}{\hspace{0.5pt}\mbox{\color{green!70!black}\ding{51}}\hspace{0.5pt}}
 
 \begin{table}[p]
-\centering
+\raggedright
 \rotatebox{90}{%
 \begin{minipage}{1.1\textheight}
 \caption{The astro-GNN literature at a glance, organised by subfield and task. \emph{Level} gives the prediction type (\S\ref{subsec:tasks}): node, edge, or graph, with \emph{Mixed} where a subfield spans several. \emph{Graph construction} names how the graph was constructed (\S\ref{subsec:no-adjacency}). \emph{Layer} gives the propagation flavour of \S\ref{subsec:flavours}, where \emph{Mixed} usually covers convolutional and message passing. \emph{Real data} marks if any analysis has included real observations, still by far the minority of published works (see \S\ref{sec:frontier}). References are representative, not exhaustive.}
@@ -28,10 +28,10 @@ Cosmology/LSS & $\Omega_m$, $\sigma_8$ from halo/galaxy catalogues & Graph & Rad
  & CMB, lensing, PNG, voids & Mixed & Sphere/proximity & Mixed & No (\redx) & \citeauthor{Adams2023_CMB_graphconv} (2023); \citeauthor{Park2023_lensing_bayesianGNN} (2023); \citeauthor{Jung2023_QuijotePNG_massfunction} (2023); \citeauthor{Thiele2026_void_graphflow} (2026) \\
 \noalign{\smallskip}
 Galaxies \& Halos & Galaxy properties from merger trees & Graph & Tree & Mixed & No (\redx) & \citeauthor{Jespersen2022_mangrove} (2022); \citeauthor{Chuang2024_mergertree_GNN} (2024) \\
- & GalaxyNo (\redx)halo connection from environment & Node & Radius & Message passing & No (\redx) & \citeauthor{Wu2023_galaxyenvironment_GNN} (2023); \citeauthor{Wu2024_galaxyhalo_environment} (2024) \\
+ & Galaxy--halo connection from environment & Node & Radius & Message passing & No (\redx) & \citeauthor{Wu2023_galaxyenvironment_GNN} (2023); \citeauthor{Wu2024_galaxyhalo_environment} (2024) \\
  & Halo/cluster masses from neighbourhoods & Node & Radius & Message passing & Yes (\greencheck) & \citeauthor{VillanuevaDomingo2022_halomass_GNN} (2022); \citeauthor{VillanuevaDomingo2023_MW_mass} (2023) \\
  & Cluster masses from X-ray profiles & Graph & Sequence-as-graph & Attentional & Yes (\greencheck) & \citeauthor{Iqbal2025_cluster_xray_GNN} (2025) \\
- & Intrinsic alignments (generative) & Node & Radius & E(3)-equivariant & No (\redx) & \citeauthor{Jagvaral2022_intrinsicalignment_GNN} (2022) \\
+ & Intrinsic alignments (generative) & Node & Radius & $E(3)$-equivariant & No (\redx) & \citeauthor{Jagvaral2022_intrinsicalignment_GNN} (2022) \\
  & Generative trees and environments & Graph & Tree/radius & Mixed & No (\redx) & \citeauthor{Tang2022_merger_normalizingflow} (2022); \citeauthor{Nguyen2024_FLORAH_assembly} (2024); \citeauthor{Nguyen2025_mergertree_generative} (2025); \citeauthor{Nguyen2026_DREAMS_diffusion} (2026) \\
 \noalign{\smallskip}
 Milky Way, Stars, Local Volume & Chemical/kinematic tagging & Node & Complete/learned & Attentional & Yes (\greencheck) & \citeauthor{Spina2025_chemicaltagging_GAT} (2025); \citeauthor{Berni2025_MWhalo_substructure} (2025) \\
